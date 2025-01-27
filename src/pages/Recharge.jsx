@@ -21,7 +21,7 @@ const Recharge = () => {
     // Fetch transaction history when the component mounts
     const fetchTransactionHistory = async () => {
       try {
-        const response = await axios.get(`http://localhost:8000/api/recharge/${userId}/transactions`);
+        const response = await axios.get(`${import.meta.env.VITE_BACKEND}/api/recharge/${userId}/transactions`);
         setTransactionHistory(response.data);
       } catch (error) {
         console.error("Error fetching transaction history", error);
@@ -48,7 +48,7 @@ const Recharge = () => {
     }
 
     try {
-      const response = await axios.post("http://localhost:8000/api/recharge", {
+      const response = await axios.post(`${import.meta.env.VITE_BACKEND}/api/recharge`, {
         userId,
         amount: finalAmount,
         paymentMethod,

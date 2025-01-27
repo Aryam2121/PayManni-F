@@ -16,6 +16,7 @@ import QrScanner from "./Components/QRCodeScanner";
 import PaymentContacts from "./Components/PayContacts";
 import UserProfile from "./Components/UserProfile"; 
 import GroupPaymentSplitting from "./Components/SplitPayment";
+import BalanceHistory from "./pages/BalanceHis";
 function App() {
   return (
     <Router>
@@ -23,6 +24,7 @@ function App() {
         <Header />
         <main className="flex-grow pt-12">
           <Routes>
+            <Route path="/balanceHis" element={<BalanceHistory />} />
             <Route path="/split-payment" element={<GroupPaymentSplitting />} />
             <Route path="/profile" element={<UserProfile />} />
             <Route path="/payContacts" element={<PaymentContacts />} />

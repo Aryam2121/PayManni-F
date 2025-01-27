@@ -26,7 +26,7 @@ const LoginPage = () => {
     setError("");
     setIsLoading(true);
     try {
-const response = await axios.post("http://localhost:8000/api/users/login", { email, password });
+const response = await axios.post(`${import.meta.env.VITE_BACKEND}/api/users/login`, { email, password });
       if (response.data.success) {
         alert("Login Successful!");
       } else {
@@ -47,7 +47,7 @@ const response = await axios.post("http://localhost:8000/api/users/login", { ema
     setError("");
     setIsLoading(true);
     try {
-const response = await axios.post("http://localhost:8000/api/users/send-otp", { phone });
+const response = await axios.post(`${import.meta.env.VITE_BACKEND}/api/users/send-otp`, { phone });
       if (response.data.success) {
         setGeneratedOtp(response.data.otp); // Save OTP for verification
         alert(`Your OTP is ${response.data.otp}`); // Replace with real OTP service

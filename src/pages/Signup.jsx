@@ -22,7 +22,7 @@ const SignupPage = () => {
 
     try {
       // Send OTP request to backend
-      const response = await axios.post("http://localhost:8000/api/users/send-otp", { phoneNumber });
+      const response = await axios.post(`${import.meta.env.VITE_BACKEND}/api/users/send-otp`, { phoneNumber });
       if (response.status === 200) {
         setIsOtpSent(true);
         setError("");
@@ -49,7 +49,7 @@ const SignupPage = () => {
       setError("");
 
       // Send signup request to backend
-      const response = await axios.post("http://localhost:8000/api/users/signup", {
+      const response = await axios.post(`${import.meta.env.VITE_BACKEND}/api/users/signup`, {
         email,
         phoneNumber,
         password,

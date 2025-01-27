@@ -5,7 +5,7 @@ const Footer = () => {
   return (
     // Footer
     <motion.footer
-      className="mt-10 py-8 bg-gradient-to-r from-gray-700 to-indigo-600 text-white text-center shadow-xl"
+      className=" py-8 bg-gradient-to-r from-gray-700 to-indigo-600 text-white text-center shadow-xl"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ delay: 1, duration: 0.8 }}

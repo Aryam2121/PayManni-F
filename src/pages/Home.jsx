@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { FaWallet, FaCreditCard, FaRegMoneyBillAlt, FaHistory, FaGift, FaQrcode, FaHeadset, FaDollarSign, FaRegBell, FaUserCircle } from "react-icons/fa";
+import { FaWallet, FaCreditCard, FaRegMoneyBillAlt, FaHistory, FaGift, FaQrcode, FaHeadset, FaDollarSign, FaRegBell, FaUserCircle, FaBalanceScale } from "react-icons/fa";
 import { motion } from "framer-motion";  
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -263,6 +263,24 @@ const Home = () => {
               className="mt-4 bg-green-600 text-white py-2 px-4 rounded-full hover:bg-green-700 transition duration-200"
             >
               Go to Contacts
+            </Link>
+          </motion.div>
+  
+          {/* Card 4: Balance&History*/}
+          <motion.div
+            className="flex flex-col items-center bg-white shadow-lg rounded-lg p-6 hover:shadow-xl transition duration-300 ease-in-out transform hover:scale-105"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 1.7, duration: 0.5 }}
+          >
+            <FaBalanceScale className="text-4xl text-green-500" />
+            <h3 className="text-xl font-semibold mt-4">Balance&History</h3>
+            <p className="text-gray-500">Check Balance&History.</p>
+            <Link
+              to="/balanceHis"
+              className="mt-4 bg-green-600 text-white py-2 px-4 rounded-full hover:bg-green-700 transition duration-200"
+            >
+              Balance&History
             </Link>
           </motion.div>
   

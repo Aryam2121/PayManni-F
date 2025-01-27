@@ -18,7 +18,7 @@ const PaymentContacts = () => {
   const [darkMode, setDarkMode] = useState(false);
   const [recentTransactions, setRecentTransactions] = useState([]);
 
-  const apiBaseUrl = 'http://localhost:8000/api'; // Replace with your API base URL
+  const apiBaseUrl = `${import.meta.env.VITE_BACKEND}/api`  ; // Replace with your API base URL
 
   // Fetch contacts and recent transactions on component mount
   useEffect(() => {
