@@ -17,6 +17,9 @@ import PaymentContacts from "./Components/PayContacts";
 import UserProfile from "./Components/UserProfile"; 
 import GroupPaymentSplitting from "./Components/SplitPayment";
 import BalanceHistory from "./pages/BalanceHis";
+import BusBooking from "./pages/BusBooking";
+import TrainBooking from "./pages/TrainBooking";
+import FlightBooking from "./pages/FlightBooking.";
 function App() {
   return (
     <Router>
@@ -24,6 +27,9 @@ function App() {
         <Header />
         <main className="flex-grow pt-12">
           <Routes>
+            <Route path="/flight-booking" element={<FlightBooking />} />
+            <Route path="/train-booking" element={<TrainBooking />} />
+            <Route path="/bus-booking" element={<BusBooking />} />
             <Route path="/balanceHis" element={<BalanceHistory />} />
             <Route path="/split-payment" element={<GroupPaymentSplitting />} />
             <Route path="/profile" element={<UserProfile />} />
@@ -34,6 +40,7 @@ function App() {
             <Route path="/transfer" element={<MoneyTransferPage />} />
             <Route path="/pay-bills" element={<BillPaymentPage />} />
             <Route path="/" element={<Home />} />
+            <Route path="/home" element={<Home />} />
             <Route path="/wallet" element={<Wallet />} />
             <Route path="/recharge" element={<Recharge />} />
             <Route path="/transactions" element={<Transactions />} />
