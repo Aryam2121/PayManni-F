@@ -20,6 +20,8 @@ import BalanceHistory from "./pages/BalanceHis";
 import BusBooking from "./pages/BusBooking";
 import TrainBooking from "./pages/TrainBooking";
 import FlightBooking from "./pages/FlightBooking.";
+import LoanApplication from "./pages/LoanApp";
+import BillPaymentReminder from "./pages/BillPaymentRem";
 function App() {
   return (
     <Router>
@@ -27,6 +29,8 @@ function App() {
         <Header />
         <main className="flex-grow pt-12">
           <Routes>
+            <Route path="/bill-reminder" element={<BillPaymentReminder />} />
+            <Route path="/loan-application" element={<LoanApplication />} />
             <Route path="/flight-booking" element={<FlightBooking />} />
             <Route path="/train-booking" element={<TrainBooking />} />
             <Route path="/bus-booking" element={<BusBooking />} />
