@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import axios from 'axios';
 
 const trains = [
   { id: 1, name: 'Express Train', from: 'New York', to: 'Los Angeles', price: { Sleeper: 150, 'AC First Class': 300, 'AC Second Class': 200 }, seats: { Sleeper: 50, 'AC First Class': 10, 'AC Second Class': 20 }, image: '/images/express-train.jpg' },
@@ -32,8 +33,14 @@ const TrainBooking = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+    setFormData({
+      ...formData,
+      [name]: value,
+      from: name === 'fromCustom' ? value : formData.from,
+      to: name === 'toCustom' ? value : formData.to,
+    });
   };
+  
 
   const validateForm = () => {
     const newErrors = {};
@@ -44,21 +51,33 @@ const TrainBooking = () => {
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (validateForm()) {
       setLoading(true);
-      setTimeout(() => {
-        const filteredTrains = trains.filter(
-          (train) => train.from === formData.from && train.to === formData.to
+      try {
+        const response = await fetch(
+          `http://localhost:8000/api/trains/get-trains?from=${formData.from}&to=${formData.to}&date=${formData.date}&class=${formData.class}`
         );
-
-        setAvailableTrains(filteredTrains);
+        const data = await response.json();
+        setAvailableTrains(data);
+  
+        // Dynamically update price when a train is selected
+        const selectedTrain = data.find(train => train.id === formData.train);
+        setFormData({
+          ...formData,
+          price: selectedTrain ? selectedTrain.price[formData.class] : 0,
+        });
+  
+      } catch (error) {
+        console.error('Error fetching train data:', error);
+      } finally {
         setLoading(false);
-      }, 2000);
+      }
     }
   };
+  
+  
 
   const handlePromoCode = () => {
     if (discountCodes[promoCode]) {
@@ -68,52 +87,125 @@ const TrainBooking = () => {
       alert('Invalid promo code');
     }
   };
+  
 
   const calculateTotalPrice = () => {
     const basePrice = formData.price * formData.passengers;
     return basePrice - basePrice * formData.discount;
   };
-
+  const handlePayment = async (price) => {
+    try {
+      // Step 1: Create an order using the backend API
+      const { data } = await axios.post("http://localhost:8000/create-order", {
+        amount: price,
+      });
+  
+      if (data.success) {
+        // Step 2: Use Razorpay SDK to initiate payment
+        const options = {
+          key: import.meta.env.VITE_RAZORPAY_KEY_ID, // From .env
+          amount: data.order.amount,
+          currency: data.order.currency,
+          name: "Flight Booking",
+          description: "Flight booking payment",
+          order_id: data.order.id,
+          handler: async function (response) {
+            // Step 3: Verify the payment once done
+            const verification = await axios.post(
+              "http://localhost:8000/verify-payment",
+              {
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+              }
+            );
+            
+            if (verification.data.success) {
+              alert("Payment Successful!");
+              // Proceed with booking confirmation or redirection
+            } else {
+              alert("Payment Verification Failed!");
+            }
+          },
+          prefill: {
+            name: "User Name", // Add dynamic user name if available
+            email: "user@example.com", // Add dynamic email if available
+          },
+          theme: {
+            color: "#528FF0",
+          },
+        };
+        const razorpay = new window.Razorpay(options);
+        razorpay.open();
+      }
+    } catch (error) {
+      console.error("Payment Error", error);
+      alert("Error in payment process!");
+    }
+  };
+  
   return (
     <div className="max-w-5xl mx-auto p-6 bg-gray-50 rounded-lg shadow-md mt-8">
       <h2 className="text-3xl font-bold mb-6 text-center text-blue-700">Train Booking System</h2>
 
       <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* From */}
-        <div>
-          <label htmlFor="from" className="block text-lg font-medium">From</label>
-          <select
-            id="from"
-            name="from"
-            value={formData.from}
-            onChange={handleChange}
-            className="mt-2 w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="">Select Departure City</option>
-            {cities.map((city) => (
-              <option key={city} value={city}>{city}</option>
-            ))}
-          </select>
-          {errors.from && <p className="text-red-500 text-sm mt-1">{errors.from}</p>}
-        </div>
+       {/* From */}
+<div>
+  <label htmlFor="from" className="block text-lg font-medium">From</label>
+  <div className="flex gap-2">
+    <select
+      id="from"
+      name="from"
+      value={formData.from}
+      onChange={handleChange}
+      className="mt-2 w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+    >
+      <option value="">Select Departure City</option>
+      {cities.map((city) => (
+        <option key={city} value={city}>{city}</option>
+      ))}
+    </select>
+    <input
+      type="text"
+      id="fromCustom"
+      name="fromCustom"
+      value={formData.fromCustom || ''}
+      onChange={handleChange}
+      placeholder="Or enter your city"
+      className="mt-2 w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+    />
+  </div>
+  {errors.from && <p className="text-red-500 text-sm mt-1">{errors.from}</p>}
+</div>
 
-        {/* To */}
-        <div>
-          <label htmlFor="to" className="block text-lg font-medium">To</label>
-          <select
-            id="to"
-            name="to"
-            value={formData.to}
-            onChange={handleChange}
-            className="mt-2 w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="">Select Destination City</option>
-            {cities.map((city) => (
-              <option key={city} value={city}>{city}</option>
-            ))}
-          </select>
-          {errors.to && <p className="text-red-500 text-sm mt-1">{errors.to}</p>}
-        </div>
+{/* To */}
+<div>
+  <label htmlFor="to" className="block text-lg font-medium">To</label>
+  <div className="flex gap-2">
+    <select
+      id="to"
+      name="to"
+      value={formData.to}
+      onChange={handleChange}
+      className="mt-2 w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+    >
+      <option value="">Select Destination City</option>
+      {cities.map((city) => (
+        <option key={city} value={city}>{city}</option>
+      ))}
+    </select>
+    <input
+      type="text"
+      id="toCustom"
+      name="toCustom"
+      value={formData.toCustom || ''}
+      onChange={handleChange}
+      placeholder="Or enter your city"
+      className="mt-2 w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+    />
+  </div>
+  {errors.to && <p className="text-red-500 text-sm mt-1">{errors.to}</p>}
+</div>
 
         {/* Date */}
         <div>
@@ -194,25 +286,51 @@ const TrainBooking = () => {
         </div>
       </form>
 
-      {/* Available Trains */}
-      {availableTrains.length > 0 ? (
-        <div className="mt-8">
-          <h3 className="text-xl font-semibold">Available Trains:</h3>
-          <div className="space-y-4 mt-4">
-            {availableTrains.map((train) => (
-              <div key={train.id} className="p-4 border border-gray-300 rounded-lg shadow-md">
-                <img src={train.image} alt={train.name} className="w-full h-40 object-cover rounded-md mb-4" />
-                <h4 className="text-lg font-medium">{train.name}</h4>
-                <p>From: {train.from} To: {train.to}</p>
-                <p>Price for {formData.class}: ${train.price[formData.class]}</p>
-                <p>Seats available: {train.seats[formData.class]}</p>
-              </div>
-            ))}
+     {/* Available Trains */}
+{availableTrains.length > 0 ? (
+  <div className="mt-8">
+    <h3 className="text-xl font-semibold">Available Trains:</h3>
+    <div className="space-y-4 mt-4">
+      {availableTrains.map((train) => (
+        <button
+          key={train.id}
+          onClick={() => setFormData({ ...formData, train: train.id })}
+          className="w-full text-left px-6 py-3 bg-gray-100 rounded-lg mb-2"
+        >
+          {train.name} - ${train.price[formData.class]} | {train.seats[formData.class]} seats available
+        </button>
+      ))}
+    </div>
+  </div>
+) : (
+  !loading && <p className="text-center mt-4 text-lg text-gray-500">No trains found for this route.</p>
+)}
+
+{/* If a train is selected, show the details and payment option */}
+{formData.train ? (
+  <div className="mt-6">
+    <h4 className="text-lg font-semibold">Selected Train:</h4>
+    <div className="p-4 border border-gray-300 rounded-lg shadow-md">
+      {/* Filter the available trains based on the selected train */}
+      {availableTrains
+        .filter((train) => train.id === formData.train)
+        .map((train) => (
+          <div key={train.id}>
+            <h4 className="text-xl">{train.name}</h4>
+            <p>From: {train.from} To: {train.to}</p>
+            <p>Price for {formData.class}: ${train.price[formData.class]}</p>
+            <p>Seats available: {train.seats[formData.class]}</p>
+            <button
+              onClick={() => handlePayment(train.price[formData.class] * formData.passengers)}
+              className="mt-4 w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            >
+              Pay Now
+            </button>
           </div>
-        </div>
-      ) : (
-        !loading && <p className="text-center mt-4 text-lg text-gray-500">No trains found for this route.</p>
-      )}
+        ))}
+    </div>
+  </div>
+) : null}
     </div>
   );
 };

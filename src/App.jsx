@@ -7,7 +7,6 @@ import Home from "./pages/Home";
 import Wallet from "./pages/Wallet";
 import Recharge from "./pages/Recharge";
 import Transactions from "./pages/Transactions";
-import Login from "./pages/Login";
 import BillPaymentPage from "./Components/Paybills";
 import MoneyTransferPage from "./Components/transfer";
 import LoginPage from "./pages/Login";
@@ -22,8 +21,10 @@ import TrainBooking from "./pages/TrainBooking";
 import FlightBooking from "./pages/FlightBooking.";
 import LoanApplication from "./pages/LoanApp";
 import BillPaymentReminder from "./pages/BillPaymentRem";
+import { GoogleOAuthProvider } from "@react-oauth/google";
 function App() {
   return (
+    <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID} >
     <Router>
       <div className="min-h-screen flex flex-col">
         <Header />
@@ -48,12 +49,12 @@ function App() {
             <Route path="/wallet" element={<Wallet />} />
             <Route path="/recharge" element={<Recharge />} />
             <Route path="/transactions" element={<Transactions />} />
-            <Route path="/login" element={<Login />} />
           </Routes>
         </main>
         <Footer />
       </div>
     </Router>
+    </GoogleOAuthProvider>
   );
 }
 

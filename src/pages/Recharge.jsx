@@ -15,16 +15,17 @@ const Recharge = () => {
   const [userLanguage, setUserLanguage] = useState("English");
   const [rating, setRating] = useState(0);
 
-  const userId = "12345"; // Replace with the actual user ID
+  const userId = localStorage.getItem('userId');
 
   useEffect(() => {
     // Fetch transaction history when the component mounts
     const fetchTransactionHistory = async () => {
       try {
-        const response = await axios.get(`${import.meta.env.VITE_BACKEND}/api/recharge/${userId}/transactions`);
+        const response = await axios.get(`http://localhost:8000/api/recharge/${userId}/transactions`);
         setTransactionHistory(response.data);
       } catch (error) {
         console.error("Error fetching transaction history", error);
+        alert("There was an error fetching your transaction history. Please try again later.");
       }
     };
     fetchTransactionHistory();
@@ -41,20 +42,20 @@ const Recharge = () => {
     }
     setIsValid(true);
     setIsProcessing(true);
-
+  
     let finalAmount = parseFloat(amount);
     if (promoCode.toLowerCase() === "discount10") {
       finalAmount = finalAmount * 0.9; // Apply 10% discount
     }
-
+  
     try {
-      const response = await axios.post(`${import.meta.env.VITE_BACKEND}/api/recharge`, {
+      const response = await axios.post(`http://localhost:8000/api/recharge`, {
         userId,
         amount: finalAmount,
         paymentMethod,
         promoCode,
       });
-
+  
       setIsSuccess(true);
       setIsProcessing(false);
       setTransactionHistory((prevTransactions) => [
@@ -66,6 +67,7 @@ const Recharge = () => {
     } catch (error) {
       setIsProcessing(false);
       console.error("Error during recharge", error);
+      alert("There was an error processing your recharge. Please try again later.");
     }
   };
 
@@ -83,9 +85,7 @@ const Recharge = () => {
 
   return (
     <div
-      className={`p-6 max-w-lg mx-auto bg-white shadow-lg rounded-lg ${
-        isDarkMode ? "bg-gray-800 text-white" : "bg-white text-gray-800"
-      }`}
+      className={`p-6 max-w-lg mx-auto bg-white shadow-lg rounded-lg ${isDarkMode ? "bg-gray-800 text-white" : "bg-white text-gray-800"}`}
     >
       {/* Language Selector */}
       <motion.div
@@ -132,9 +132,7 @@ const Recharge = () => {
       >
         <input
           type="number"
-          className={`mt-4 p-3 border rounded w-full focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-            !isValid && "border-red-500"
-          }`}
+          className={`mt-4 p-3 border rounded w-full focus:outline-none focus:ring-2 focus:ring-blue-500 ${!isValid && "border-red-500"}`}
           placeholder="Enter amount"
           value={amount}
           onChange={(e) => setAmount(e.target.value)}

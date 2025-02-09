@@ -19,23 +19,63 @@ export default function BusBooking() {
   const [showBookings, setShowBookings] = useState(false);
 
   // Function to search buses (optimized with useCallback)
-  const searchBuses = useCallback(() => {
+  const fetchBuses = async () => {
     setLoading(true);
-    setTimeout(() => {
-      setBuses([
-        { id: 1, name: "Red Express", time: "10:00 AM", price: "₹500", type: "AC Sleeper" },
-        { id: 2, name: "Blue Line", time: "2:00 PM", price: "₹700", type: "Non-AC Seater" },
-        { id: 3, name: "Green Deluxe", time: "6:00 PM", price: "₹900", type: "AC Semi-Sleeper" }
-      ]);
+    try {
+      const response = await fetch(`https://api.example.com/buses?from=${from}&to=${to}&seatType=${seatType}`, {
+        method: 'GET',
+        headers: {
+          'X-TripGo-Key': 'e43957128fb7bd8d7a947caecd05cf22',
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setBuses(data);  // Set the fetched buses data
+      } else {
+        console.error("Error fetching buses:", response.statusText);
+      }
+    } catch (error) {
+      console.error("Error fetching buses:", error);
+    } finally {
       setLoading(false);
-    }, 1500);
-  }, []);
+    }
+  };
+
 
   // Function to book a bus (optimized with useCallback)
-  const bookBus = useCallback((bus) => {
-    setMyBookings((prev) => [...prev, { ...bus, date: date.toDateString(), from, to }]);
-  }, [date, from, to]);
-
+  const bookBus = async (bus) => {
+    const bookingDetails = {
+      busId: bus.id,
+      user: "user123", // Replace with the logged-in user's data
+      date: new Date().toLocaleDateString(),
+      from,
+      to,
+      seatType,
+    };
+  
+    try {
+      const response = await fetch('https://api.example.com/bookBus', {
+        method: 'POST',
+        headers: {
+          'X-TripGo-Key': 'e43957128fb7bd8d7a947caecd05cf22',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(bookingDetails),
+      });
+  
+      const data = await response.json();
+      if (response.ok) {
+        alert("Bus booked successfully");
+        // Handle the response as needed
+      } else {
+        alert("Booking failed");
+      }
+    } catch (error) {
+      console.error("Error booking bus:", error);
+    }
+  };
   // Optimized filtering for buses (useMemo)
   const filteredBuses = useMemo(() => {
     return buses.filter((bus) => !seatType || bus.type.includes(seatType));
@@ -47,6 +87,19 @@ export default function BusBooking() {
     { id: 2, image: off, link: "#" },
     { id: 3, image: refund, link: "#" },
 ];
+const searchBuses = useCallback(() => {
+  setLoading(true);
+  fetch(`/api/buses?from=${from}&to=${to}&date=${date.toISOString()}&seatType=${seatType}`)
+    .then(response => response.json())
+    .then(data => {
+      setBuses(data);
+      setLoading(false);
+    })
+    .catch(err => {
+      console.error("Error fetching buses:", err);
+      setLoading(false);
+    });
+}, [from, to, date, seatType]);
 
 
   return (

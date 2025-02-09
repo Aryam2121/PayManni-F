@@ -3,31 +3,42 @@ import { FaSpinner } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import Signup from "../assets/signup.webp";
 import axios from "axios";
+import { GoogleLogin } from "@react-oauth/google";
 
 const SignupPage = () => {
   const [email, setEmail] = useState("");
-  const [phoneNumber, setPhoneNumber] = useState(""); // New state for phone number
-  const [otp, setOtp] = useState(""); // State for OTP input
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [otp, setOtp] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-  const [isOtpSent, setIsOtpSent] = useState(false); // To track OTP status
+  const [isOtpSent, setIsOtpSent] = useState(false);
+  const backendUrl = import.meta.env.VITE_BACKEND;
+
+  const handleGoogleLogin = async (response) => {
+    try {
+      const googleResponse = await axios.post(`${backendUrl}/api/auth/google`, {
+        token: response.credential,
+      });
+      localStorage.setItem("authToken", googleResponse.data.token);
+      alert("Google Sign-Up Successful!");
+    } catch (err) {
+      setError("Error during Google Sign-Up. Please try again.");
+      console.error(err);
+    }
+  };
 
   const handleSendOtp = async () => {
     if (!phoneNumber) {
       setError("Please enter your phone number.");
       return;
     }
-
     try {
-      // Send OTP request to backend
-      const response = await axios.post(`${import.meta.env.VITE_BACKEND}/api/users/send-otp`, { phoneNumber });
-      if (response.status === 200) {
-        setIsOtpSent(true);
-        setError("");
-        alert(`OTP sent to ${phoneNumber}`);
-      }
+      await axios.post(`${backendUrl}/api/auth/send-otp`, { phoneNumber });
+      setIsOtpSent(true);
+      setError("");
+      alert(`OTP sent to ${phoneNumber}`);
     } catch (err) {
       setError("Error sending OTP. Please try again.");
       console.error(err);
@@ -35,36 +46,24 @@ const SignupPage = () => {
   };
 
   const handleSignup = async () => {
-    if (!email || !phoneNumber || !password || !confirmPassword || !otp) {
-      setError("Please fill in all fields.");
+    if (!phoneNumber && !email) {
+      setError("Please enter either your phone number or email.");
       return;
     }
-    if (password !== confirmPassword) {
-      setError("Passwords do not match.");
+    if (phoneNumber && !otp) {
+      setError("Please enter the OTP sent to your phone number.");
       return;
     }
-
+    setIsLoading(true);
     try {
-      setIsLoading(true);
-      setError("");
-
-      // Send signup request to backend
-      const response = await axios.post(`${import.meta.env.VITE_BACKEND}/api/users/signup`, {
-        email,
-        phoneNumber,
-        password,
-        otp,
-      });
-
-      if (response.status === 200) {
-        setIsLoading(false);
-        alert("Signup Successful!");
-      }
+      const signupData = phoneNumber ? { phoneNumber, otp } : { email, password };
+      await axios.post(`${backendUrl}/api/auth/signup`, signupData);
+      alert("Signup Successful!");
     } catch (err) {
-      setIsLoading(false);
       setError("Error during signup. Please try again.");
       console.error(err);
     }
+    setIsLoading(false);
   };
 
   return (
@@ -169,6 +168,18 @@ const SignupPage = () => {
             <Link to="/login" className="text-blue-600 hover:underline text-sm">
               Already have an account? Login
             </Link>
+          </div>
+
+          {/* Google Sign-Up Button */}
+          <div className="mt-4 text-center">
+            <GoogleLogin
+              clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}
+              buttonText="Sign Up with Google"
+              onSuccess={handleGoogleLogin}
+              onFailure={handleGoogleLogin}
+              cookiePolicy="single_host_origin"
+              className="w-full bg-red-600 text-white py-3 rounded-md hover:bg-red-700"
+            />
           </div>
         </div>
       </div>
