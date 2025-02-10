@@ -3,24 +3,18 @@ import { motion } from 'framer-motion';
 import { toast } from 'react-toastify';
 import { FiStar, FiSearch, FiSend } from 'react-icons/fi';
 import axios from 'axios';
+
 const PaymentContacts = () => {
-  const [contacts, setContacts] = useState([
-    { id: 1, name: 'John Doe', phone: '+1234567890', isFavorite: false },
-    { id: 2, name: 'Jane Smith', phone: '+1987654321', isFavorite: true },
-    { id: 3, name: 'Alice Johnson', phone: '+1122334455', isFavorite: false },
-    { id: 4, name: 'Bob Brown', phone: '+5566778899', isFavorite: true },
-  ]);
+  const [contacts, setContacts] = useState([]);
   const [newContact, setNewContact] = useState({ name: '', phone: '' });
   const [amount, setAmount] = useState('');
   const [selectedContacts, setSelectedContacts] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(false);
-  const [darkMode, setDarkMode] = useState(false);
   const [recentTransactions, setRecentTransactions] = useState([]);
 
-  const apiBaseUrl = `${import.meta.env.VITE_BACKEND}/api`  ; // Replace with your API base URL
+  const apiBaseUrl = `http://localhost:8000/api`;
 
-  // Fetch contacts and recent transactions on component mount
   useEffect(() => {
     const fetchInitialData = async () => {
       try {
@@ -63,10 +57,22 @@ const PaymentContacts = () => {
 
     setLoading(true);
     try {
+      const parsedAmount = parseFloat(amount); // Convert to number
+      if (isNaN(parsedAmount) || parsedAmount <= 0) {
+        toast.error('Please enter a valid amount.');
+        return;
+      }
+
+      const paymentMethod = "creditCard";  // Or dynamically based on user selection
+      const userId = "userId_value";      // Replace with actual user ID
+
       const res = await axios.post(`${apiBaseUrl}/transactions/send`, {
-        amount,
+        amount: parsedAmount,
         contacts: selectedContacts,
+        paymentMethod: paymentMethod,
+        userId: userId,
       });
+
       setRecentTransactions([...res.data, ...recentTransactions]);
       setSelectedContacts([]);
       setAmount('');
@@ -109,46 +115,41 @@ const PaymentContacts = () => {
       contact.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       contact.phone.includes(searchQuery)
   );
+
   return (
-    <div className={`${darkMode ? 'bg-gray-900 text-white' : 'bg-white text-gray-900'} min-h-screen`}>
+    <div className="dark:bg-gray-800 dark:text-white min-h-screen">
       <div className="max-w-4xl mx-auto px-4 py-8">
         {/* Header */}
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-3xl font-semibold">Pay Contacts</h2>
-          <button
-            onClick={() => setDarkMode(!darkMode)}
-            className="p-2 rounded-full bg-gray-600 text-white hover:bg-gray-700"
-          >
-            {darkMode ? 'Light Mode' : 'Dark Mode'}
-          </button>
+        <div className="flex justify-between items-center mb-8">
+          <h2 className="text-3xl font-semibold text-indigo-600">Pay Contacts</h2>
         </div>
 
         {/* Add Contact */}
         <motion.div
-          className="bg-gray-50 shadow-md rounded-lg p-6 mb-6"
+          className="bg-gray-900 shadow-lg rounded-lg p-6 mb-6"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.3 }}
         >
           <h3 className="text-lg font-medium mb-4">Add New Contact</h3>
-          <div className="flex space-x-4">
+          <div className="flex items-center space-x-4">
             <input
               type="text"
-              className="w-full p-2 border border-gray-300 rounded-lg"
+              className="w-full p-3 border border-gray-700 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 dark:bg-gray-800 dark:text-white"
               placeholder="Name"
               value={newContact.name}
               onChange={(e) => setNewContact({ ...newContact, name: e.target.value })}
             />
             <input
               type="text"
-              className="w-full p-2 border border-gray-300 rounded-lg"
+              className="w-full p-3 border border-gray-700 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 dark:bg-gray-800 dark:text-white"
               placeholder="Phone Number"
               value={newContact.phone}
               onChange={(e) => setNewContact({ ...newContact, phone: e.target.value })}
             />
             <button
               onClick={handleAddContact}
-              className="p-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600"
+              className="p-3 bg-indigo-600 text-white rounded-lg shadow-md hover:bg-indigo-700 transition duration-300"
             >
               Add
             </button>
@@ -156,11 +157,11 @@ const PaymentContacts = () => {
         </motion.div>
 
         {/* Search and Contacts */}
-        <div className="flex items-center space-x-2 mb-6">
-          <FiSearch className="text-xl" />
+        <div className="flex items-center space-x-4 mb-8">
+          <FiSearch className="text-xl text-gray-400" />
           <input
             type="text"
-            className="w-full p-2 border border-gray-300 rounded-lg"
+            className="w-full p-3 border border-gray-700 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 dark:bg-gray-800 dark:text-white"
             placeholder="Search contacts..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -170,28 +171,31 @@ const PaymentContacts = () => {
         {/* Contact List */}
         <div className="space-y-4">
           {filteredContacts.map((contact) => (
-            <div key={contact.id} className="flex justify-between items-center p-4 bg-gray-100 rounded-lg shadow-md">
+            <div
+              key={contact._id}
+              className="flex justify-between items-center p-4 bg-gray-700 rounded-lg shadow-md hover:bg-indigo-600 transition duration-300"
+            >
               <div className="flex items-center space-x-4">
-                <div className="flex items-center justify-center w-10 h-10 bg-indigo-500 text-white rounded-full">
+                <div className="flex items-center justify-center w-12 h-12 bg-indigo-500 text-white rounded-full">
                   {contact.name[0]}
                 </div>
                 <div>
                   <p className="font-medium">{contact.name}</p>
-                  <p className="text-sm text-gray-600">{contact.phone}</p>
+                  <p className="text-sm text-gray-400">{contact.phone}</p>
                 </div>
               </div>
               <div className="flex space-x-4 items-center">
                 <button
-                  onClick={() => toggleFavorite(contact.id)}
-                  className={`text-xl ${contact.isFavorite ? 'text-yellow-500' : 'text-gray-400'}`}
+                  onClick={() => toggleFavorite(contact._id)}
+                  className={`text-xl ${contact.isFavorite ? 'text-yellow-500' : 'text-gray-500'}`}
                 >
                   <FiStar />
                 </button>
                 <input
                   type="checkbox"
                   className="form-checkbox h-5 w-5 text-indigo-500"
-                  checked={selectedContacts.includes(contact.id)}
-                  onChange={() => handleSelectContact(contact.id)}
+                  checked={selectedContacts.includes(contact._id)}
+                  onChange={() => handleSelectContact(contact._id)}
                 />
               </div>
             </div>
@@ -200,7 +204,7 @@ const PaymentContacts = () => {
 
         {/* Amount and Send Button */}
         <motion.div
-          className="bg-gray-50 shadow-md rounded-lg p-6 mt-6"
+          className="bg-gray-900 shadow-lg rounded-lg p-6 mt-8"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.5 }}
@@ -208,14 +212,14 @@ const PaymentContacts = () => {
           <h3 className="text-lg font-medium mb-4">Enter Amount</h3>
           <input
             type="number"
-            className="w-full p-2 border border-gray-300 rounded-lg mb-4"
+            className="w-full p-3 border border-gray-700 rounded-lg mb-4 shadow-sm focus:ring-2 focus:ring-indigo-500 dark:bg-gray-800 dark:text-white"
             placeholder="Amount"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
           />
           <button
             onClick={handleSendMoney}
-            className={`w-full py-2 text-white rounded-lg ${loading ? 'bg-gray-400' : 'bg-green-500 hover:bg-green-600'}`}
+            className={`w-full py-3 text-white rounded-lg ${loading ? 'bg-gray-600' : 'bg-indigo-600 hover:bg-indigo-700'}`}
             disabled={loading}
           >
             {loading ? 'Processing...' : 'Send Money'}
@@ -223,13 +227,22 @@ const PaymentContacts = () => {
         </motion.div>
 
         {/* Recent Transactions */}
-        <div className="mt-6">
+        <div className="mt-8">
           <h3 className="text-xl font-medium mb-4">Recent Transactions</h3>
-          <ul>
+          <ul className="space-y-4">
             {recentTransactions.map((transaction, index) => (
-              <li key={index} className="flex justify-between items-center py-2">
-                <span>{transaction.name}</span>
-                <span className="text-green-500 font-medium">₹{transaction.amount}</span>
+              <li
+                key={index}
+                className="flex justify-between items-center py-4 px-6 bg-gray-700 rounded-lg shadow-md"
+              >
+                <div>
+                  <p className="font-medium">{transaction.contacts[0]?.name}</p>
+                  <p className="text-sm text-gray-400">{transaction.contacts[0]?.phone}</p>
+                </div>
+                <div className="flex items-center">
+                  <span className="text-gray-400">{transaction.paymentMethod}</span>
+                  <span className="ml-4 text-green-400 font-medium">₹{transaction.amount}</span>
+                </div>
               </li>
             ))}
           </ul>

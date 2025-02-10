@@ -35,19 +35,19 @@ const BalanceHistory = () => {
 
   const transactions = [
     {
-      name: "Deepanshu",
+      name: "Bheeni",
       date: "25 Jan, 02:27 PM",
       amount: "+₹120",
       type: "credit",
     },
     {
-      name: "Deepanshu",
+      name: "Bheeni",
       date: "22 Jan, 11:34 PM",
       amount: "-₹45",
       type: "debit",
     },
     {
-      name: "Deepanshu",
+      name: "Bheeni",
       date: "19 Jan, 09:58 PM",
       amount: "-₹33.33",
       type: "debit",

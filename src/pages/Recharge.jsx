@@ -85,7 +85,7 @@ const Recharge = () => {
 
   return (
     <div
-      className={`p-6 max-w-lg mx-auto bg-white shadow-lg rounded-lg ${isDarkMode ? "bg-gray-800 text-white" : "bg-white text-gray-800"}`}
+      className={`p-8 max-w-lg mx-auto bg-white shadow-lg rounded-xl transition-all duration-300 ${isDarkMode ? "bg-gray-800 text-white" : "bg-white text-gray-800"}`}
     >
       {/* Language Selector */}
       <motion.div
@@ -97,7 +97,7 @@ const Recharge = () => {
         <select
           value={userLanguage}
           onChange={handleLanguageChange}
-          className="p-2 bg-gray-100 rounded-lg"
+          className="p-2 bg-gray-200 rounded-lg"
         >
           <option value="English">English</option>
           <option value="Hindi">Hindi</option>
@@ -106,7 +106,7 @@ const Recharge = () => {
       </motion.div>
 
       <motion.h2
-        className="text-3xl font-semibold mt-8"
+        className="text-3xl font-semibold mt-8 text-center"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.8 }}
@@ -116,7 +116,7 @@ const Recharge = () => {
 
       {/* Dark Mode Toggle */}
       <motion.button
-        className="absolute top-4 right-4 bg-gray-500 text-white p-2 rounded-full focus:outline-none"
+        className="absolute top-4 right-4 bg-gray-500 text-white p-3 rounded-full focus:outline-none"
         onClick={handleToggleDarkMode}
         whileHover={{ scale: 1.1 }}
       >
@@ -132,7 +132,7 @@ const Recharge = () => {
       >
         <input
           type="number"
-          className={`mt-4 p-3 border rounded w-full focus:outline-none focus:ring-2 focus:ring-blue-500 ${!isValid && "border-red-500"}`}
+          className={`mt-4 p-4 border rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-blue-500 ${!isValid && "border-red-500"}`}
           placeholder="Enter amount"
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
@@ -158,14 +158,14 @@ const Recharge = () => {
       >
         <input
           type="text"
-          className="p-3 border rounded w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="p-4 border rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
           placeholder="Enter promo code (optional)"
           value={promoCode}
           onChange={(e) => setPromoCode(e.target.value)}
         />
       </motion.div>
 
-      {/* Payment Method Dropdown with Icons */}
+      {/* Payment Method Dropdown */}
       <motion.div
         className="mt-6"
         initial={{ opacity: 0 }}
@@ -173,7 +173,7 @@ const Recharge = () => {
         transition={{ duration: 0.8, delay: 0.6 }}
       >
         <select
-          className="p-3 border rounded w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="p-4 border rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
           value={paymentMethod}
           onChange={(e) => setPaymentMethod(e.target.value)}
         >
@@ -198,7 +198,7 @@ const Recharge = () => {
 
       {/* Recharge Button */}
       <motion.button
-        className="mt-6 w-full bg-blue-600 text-white py-3 rounded shadow-lg hover:bg-blue-700 transition-all"
+        className="mt-6 w-full bg-blue-600 text-white py-3 rounded-lg shadow-lg hover:bg-blue-700 transition-all"
         onClick={handleRecharge}
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.98 }}
@@ -245,7 +245,7 @@ const Recharge = () => {
           {[1, 2, 3, 4, 5].map((rate) => (
             <motion.button
               key={rate}
-              className={`px-3 py-2 rounded-lg ${rating >= rate ? "bg-yellow-500" : "bg-gray-300"}`}
+              className={`px-4 py-3 rounded-lg text-lg font-semibold ${rating >= rate ? "bg-yellow-500" : "bg-gray-300"}`}
               onClick={() => handleRating(rate)}
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.95 }}
@@ -254,28 +254,6 @@ const Recharge = () => {
             </motion.button>
           ))}
         </div>
-      </motion.div>
-
-      {/* Transaction History */}
-      <motion.div
-        className="mt-6 p-4 bg-gray-100 rounded-lg"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.8, delay: 1.2 }}
-      >
-        <h3 className="text-xl font-semibold">Transaction History</h3>
-        <ul className="mt-4 space-y-2">
-          {transactionHistory.length > 0 ? (
-            transactionHistory.map((transaction, index) => (
-              <li key={index} className="flex justify-between">
-                <span>{transaction.transactionDate}</span>
-                <span>₹{transaction.amount.toFixed(2)}</span>
-              </li>
-            ))
-          ) : (
-            <p className="text-gray-500">No transactions yet.</p>
-          )}
-        </ul>
       </motion.div>
     </div>
   );

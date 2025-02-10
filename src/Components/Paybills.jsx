@@ -63,16 +63,16 @@ const BillPaymentPage = () => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
-      className="mt-6 p-6 max-w-md mx-auto bg-white rounded-lg shadow-lg"
+      className="mt-6 p-6 max-w-md mx-auto bg-white rounded-lg shadow-lg border-t-4 border-blue-500 dark:bg-gray-800 dark:border-blue-400"
     >
-      <h3 className="text-xl font-semibold text-gray-800">Pay {bill.name} Bill</h3>
+      <h3 className="text-2xl font-semibold text-gray-800 dark:text-white">Pay {bill.name} Bill</h3>
       <p className="text-gray-600 mt-2">Amount: ₹{billAmounts[bill.name.toLowerCase()]}</p>
 
       <div className="mt-4">
-        <label htmlFor="payment-method" className="block text-gray-700 mb-2">Payment Method</label>
+        <label htmlFor="payment-method" className="block text-gray-700 dark:text-gray-300 mb-2">Payment Method</label>
         <select
           id="payment-method"
-          className="w-full p-2 border border-gray-300 rounded-md mt-2"
+          className="w-full p-3 border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white mt-2"
           value={paymentMethod}
           onChange={(e) => setPaymentMethod(e.target.value)}
         >
@@ -86,25 +86,24 @@ const BillPaymentPage = () => {
             <input
               type="text"
               placeholder="Enter card number"
-              className="w-full p-2 border border-gray-300 rounded-md mt-2"
+              className="w-full p-3 border border-gray-300 rounded-md mt-4 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
             />
             <input
               type="text"
               placeholder="Enter CVV"
-              className="w-full p-2 border border-gray-300 rounded-md mt-2"
+              className="w-full p-3 border border-gray-300 rounded-md mt-4 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
             />
             <input
               type="text"
               placeholder="Enter Expiry Date"
-              className="w-full p-2 border border-gray-300 rounded-md mt-2"
+              className="w-full p-3 border border-gray-300 rounded-md mt-4 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
             />
           </>
         )}
-        {/* Add other payment method inputs here */}
 
         <button
           onClick={handlePayment}
-          className="w-full bg-blue-600 text-white py-2 mt-4 rounded-md hover:bg-blue-700 transition-all"
+          className="w-full bg-blue-600 text-white py-3 mt-6 rounded-md hover:bg-blue-700 transition-all"
           disabled={isLoading}
         >
           {isLoading ? <FaSpinner className="animate-spin mx-auto" /> : "Pay Now"}
@@ -118,12 +117,12 @@ const BillPaymentPage = () => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
-      className={`mt-4 p-4 text-center rounded-md ${status === "success" ? "bg-green-500 text-white" : "bg-red-500 text-white"}`}
+      className={`mt-4 p-6 text-center rounded-lg shadow-lg ${status === "success" ? "bg-green-500 text-white" : "bg-red-500 text-white"}`}
     >
       {status === "success" ? (
-        <FaCheckCircle className="text-3xl" />
+        <FaCheckCircle className="text-4xl mb-2" />
       ) : (
-        <FaTimesCircle className="text-3xl" />
+        <FaTimesCircle className="text-4xl mb-2" />
       )}
       <h4 className="font-semibold">{status === "success" ? "Payment Successful!" : "Payment Failed!"}</h4>
       <p>{status === "success" ? "Your payment was successful." : "Please try again or contact support."}</p>
@@ -132,7 +131,7 @@ const BillPaymentPage = () => {
 
   return (
     <div className="p-6 w-full bg-gray-50 dark:bg-gray-900 min-h-screen">
-      <h2 className="text-3xl font-semibold text-gray-800 dark:text-white mb-6">Select Bill to Pay</h2>
+      <h2 className="text-4xl font-semibold text-gray-800 dark:text-white mb-8">Select Bill to Pay</h2>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
         {billTypes.map((bill) => (
@@ -143,18 +142,18 @@ const BillPaymentPage = () => {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
-            <div className="flex items-center">
-              <span className="text-4xl mr-4">{bill.icon}</span>
+            <div className="flex items-center mb-4">
+              <span className="text-5xl mr-4">{bill.icon}</span>
               <h3 className="text-xl font-semibold text-gray-800 dark:text-white">{bill.name} Bill</h3>
             </div>
-            <p className="text-gray-500 mt-2">Amount: ₹{billAmounts[bill.name.toLowerCase()]}</p>
+            <p className="text-gray-500 dark:text-gray-300">Amount: ₹{billAmounts[bill.name.toLowerCase()]}</p>
             <input
               type="number"
               value={billAmounts[bill.name.toLowerCase()]}
               onChange={(e) =>
                 handleAmountChange(bill.name.toLowerCase(), e.target.value)
               }
-              className="w-full p-2 border border-gray-300 rounded-md mt-2"
+              className="w-full p-3 border border-gray-300 rounded-md mt-4 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
               min="0"
               placeholder="Enter amount"
             />
@@ -165,13 +164,13 @@ const BillPaymentPage = () => {
       {selectedBill && <PaymentForm bill={selectedBill} />}
       {paymentStatus && <PaymentNotification status={paymentStatus} />}
 
-      <div className="mt-6">
-        <h3 className="text-2xl font-semibold text-gray-800 dark:text-white mb-4">Payment History</h3>
-        <ul className="space-y-2">
+      <div className="mt-12">
+        <h3 className="text-2xl font-semibold text-gray-800 dark:text-white mb-6">Payment History</h3>
+        <ul className="space-y-4">
           {paymentHistory.map((history, index) => (
-            <li key={index} className="p-4 bg-gray-100 rounded-lg shadow-md">
-              <p>{history.bill} - ₹{history.amount}</p>
-              <p>{new Date(history.date).toLocaleString()}</p>
+            <li key={index} className="p-4 bg-gray-100 rounded-lg shadow-md dark:bg-gray-800 dark:border-gray-700">
+              <p className="text-gray-800 dark:text-white">{history.bill} - ₹{history.amount}</p>
+              <p className="text-gray-500 dark:text-gray-400">{new Date(history.date).toLocaleString()}</p>
               <p className={`${history.status === "success" ? "text-green-500" : "text-red-500"}`}>{history.status}</p>
             </li>
           ))}

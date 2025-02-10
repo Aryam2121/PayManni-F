@@ -4,20 +4,22 @@ import { FaPlane, FaTrain, FaBus,FaWallet, FaCreditCard, FaRegMoneyBillAlt, FaHi
 import { motion } from "framer-motion";  
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { useNavigate } from "react-router-dom";
 import boy from "../assets/boy.png"
 const Home = () => {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
   const [transactions, setTransactions] = useState([]);
-  const [darkMode, setDarkMode] = useState(false);
+  const [darkMode, setDarkMode] = useState(true);
   const [chatOpen, setChatOpen] = useState(false);
   const [offers, setOffers] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [loanAmount, setLoanAmount] = useState(0);
-
+  const navigate = useNavigate();
   useEffect(() => {
     setTimeout(() => {
-      setUser({ name: "Aryaman Gupta", balance: 1200, profilePic: {boy} });
+      setUser({ name: "Aryaman Gupta", balance: 1200, profilePic: boy });
+
       setTransactions([
         { type: 'Recharge', amount: 500, date: '2024-12-01' },
         { type: 'Pay Bills', amount: 300, date: '2024-12-05' },
@@ -95,33 +97,47 @@ const Home = () => {
 
     {/* User Info Section */}
     {!loading ? (
-      <motion.div
-        className={`mt-6 p-6 rounded-xl shadow-md transition-all duration-300 ${darkMode ? "bg-gray-800 text-white shadow-gray-700" : "bg-white text-gray-900 shadow-lg"}`}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 1, duration: 1 }}
-      >
-        <div className="flex items-center">
-          <img src={user.profilePic} alt="Profile" className="w-14 h-14 rounded-full shadow-md mr-4" />
-          <div>
-            <h3 className="text-2xl font-bold">{user.name}</h3>
-            <p className="mt-1 text-gray-400">Balance: <span className="text-green-400 font-semibold">₹{user.balance}</span></p>
-          </div>
-        </div>
-        <button
-          onClick={() => setUser(null)}
-          className="mt-4 px-5 py-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition duration-300 shadow-md"
-        >
-          Logout
-        </button>
-      </motion.div>
-    ) : (
-      <div className="mt-6 flex justify-center">
-        <div className="animate-spin rounded-full border-4 border-t-4 border-blue-500 h-16 w-16"></div>
-      </div>
-    )}
+     <motion.div
+     className={`mt-6 p-6 rounded-xl shadow-md transition-all duration-300 flex items-center justify-between ${
+       darkMode ? "bg-gray-800 text-white shadow-gray-700" : "bg-white text-gray-900 shadow-lg"
+     }`}
+     initial={{ opacity: 0, y: -20 }}
+     animate={{ opacity: 1, y: 0 }}
+     transition={{ delay: 0.5, duration: 0.7 }}
+   >
+     {/* Left: Profile & QR Code */}
+     <div className="flex items-center space-x-4">
+       <img src={user.profilePic} alt="Profile" className="w-16 h-16 rounded-full shadow-md border-2 border-gray-300" />
+       {/* ✅ QR Code Button with Navigation */}
+       <button
+         onClick={() => navigate("/qr-scanner")}
+         className="p-3 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition duration-300 shadow-md"
+       >
+         <FaQrcode className="text-2xl" />
+       </button>
+     </div>
+
+     {/* Right: User Info */}
+     <div className="text-right">
+       <h3 className="text-2xl font-bold">{user.name}</h3>
+       <p className="mt-1 text-gray-400">
+         Balance: <span className="text-green-400 font-semibold">₹{user.balance}</span>
+       </p>
+       <button
+         onClick={() => setUser(null)}
+         className="mt-4 px-5 py-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition duration-300 shadow-md"
+       >
+         Logout
+       </button>
+     </div>
+   </motion.div>
+ ) : (
+   <div className="mt-6 flex justify-center">
+     <div className="animate-spin rounded-full border-4 border-t-4 border-blue-500 h-16 w-16"></div>
+   </div>
+  )}
   
-        {/* Notifications */}
+        {/* Notifications
     <div className="mt-6">
       <h4 className="text-xl font-semibold">🔔 Notifications</h4>
       <button
@@ -148,8 +164,8 @@ const Home = () => {
       ) : (
         <p className="mt-4 text-gray-500">No new notifications.</p>
       )}
-    </div>
-         {/* Exclusive Offers */}
+    </div> */}
+         {/* Exclusive Offers
     <div className="mt-6">
       <h4 className="text-xl font-semibold">🎁 Exclusive Offers</h4>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-4">
@@ -178,150 +194,113 @@ const Home = () => {
           </motion.div>
         ))}
       </div>
-    </div>
+    </div> */}
 
-    {/* Instant Loan Application */}
-    <div className={`mt-8 p-6 rounded-xl shadow-lg transition-all duration-300 ${darkMode ? "bg-gray-800 text-white" : "bg-white text-gray-900"}`}>
-      <motion.h4
-        className="text-xl font-semibold"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 2, duration: 0.5 }}
-      >
-        💰 Instant Loan Application
-      </motion.h4>
-      <p className="mt-2">Apply for an instant loan of up to ₹5000.</p>
-      <input
-        type="number"
-        value={loanAmount}
-        onChange={(e) => setLoanAmount(e.target.value)}
-        className="mt-4 p-3 w-full border rounded-md focus:ring-2 focus:ring-blue-400 outline-none transition duration-300"
-        placeholder="Enter loan amount"
-      />
-      <button
-        onClick={handleLoanApplication}
-        className="mt-4 px-5 py-2 bg-yellow-500 text-white rounded-full hover:bg-yellow-600 transition duration-300 shadow-md"
-      >
-        Apply for Loan
-      </button>
-    </div>
+
   
         {/* Feature Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-10">
-          {/* Card 1: Recharge */}
-          <motion.div
-                className={`flex flex-col items-center shadow-lg rounded-lg p-6 hover:shadow-xl transition duration-300 ease-in-out transform hover:scale-105 ${
-                  darkMode ? "bg-gray-800 text-white" : "bg-white text-gray-900"
-                }`}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 1.5, duration: 0.5 }}
-          >
-            <FaWallet className="text-4xl text-blue-500" />
-            <h3 className="text-xl font-semibold mt-4">Recharge</h3>
-            <p className="text-gray-500">Add balance to your wallet.</p>
-            <Link
-              to="/recharge"
-              className="mt-4 bg-blue-600 text-white py-2 px-4 rounded-full hover:bg-blue-700 transition duration-200"
-            >
-              Go to Recharge
-            </Link>
-          </motion.div>
-  
-          {/* Card 2: Pay Bills */}
-          <motion.div
-                className={`flex flex-col items-center shadow-lg rounded-lg p-6 hover:shadow-xl transition duration-300 ease-in-out transform hover:scale-105 ${
-                  darkMode ? "bg-gray-800 text-white" : "bg-white text-gray-900"
-                }`}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 1.7, duration: 0.5 }}
-          >
-            <FaRegMoneyBillAlt className="text-4xl text-green-500" />
-            <h3 className="text-xl font-semibold mt-4">Pay Bills</h3>
-            <p className="text-gray-500">Pay your utility bills easily.</p>
-            <Link
-              to="/pay-bills"
-              className="mt-4 bg-green-600 text-white py-2 px-4 rounded-full hover:bg-green-700 transition duration-200"
-            >
-              Go to Bills
-            </Link>
-          </motion.div>
-  
-          {/* Card 3: Money Transfer */}
-          <motion.div
-               className={`flex flex-col items-center shadow-lg rounded-lg p-6 hover:shadow-xl transition duration-300 ease-in-out transform hover:scale-105 ${
-                darkMode ? "bg-gray-800 text-white" : "bg-white text-gray-900"
-              }`}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 1.9, duration: 0.5 }}
-          >
-            <FaCreditCard className="text-4xl text-purple-500" />
-            <h3 className="text-xl font-semibold mt-4">Transfer Money</h3>
-            <p className="text-gray-500">Send money to anyone instantly.</p>
-            <Link
-              to="/transfer"
-              className="mt-4 bg-purple-600 text-white py-2 px-4 rounded-full hover:bg-purple-700 transition duration-200"
-            >
-              Send Money
-            </Link>
-          </motion.div>
-  
-          {/* Card 4: Pay Contacts */}
-          <motion.div
-               className={`flex flex-col items-center shadow-lg rounded-lg p-6 hover:shadow-xl transition duration-300 ease-in-out transform hover:scale-105 ${
-                darkMode ? "bg-gray-800 text-white" : "bg-white text-gray-900"
-              }`}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 1.7, duration: 0.5 }}
-          >
-            <FaUserCircle className="text-4xl text-green-500" />
-            <h3 className="text-xl font-semibold mt-4">Pay Contacts</h3>
-            <p className="text-gray-500">Pay your Contacts easily.</p>
-            <Link
-              to="/payContacts"
-              className="mt-4 bg-green-600 text-white py-2 px-4 rounded-full hover:bg-green-700 transition duration-200"
-            >
-              Go to Contacts
-            </Link>
-          </motion.div>
+<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-10">
+  {/* Card Example: Recharge */}
+  <motion.div
+    className={`flex flex-col items-center shadow-lg rounded-3xl p-6 hover:shadow-2xl transition-all duration-300 ease-in-out transform hover:scale-105 ${darkMode ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white" : "bg-gradient-to-r from-blue-400 to-blue-500 text-white"}`}
+    initial={{ opacity: 0 }}
+    animate={{ opacity: 1 }}
+    transition={{ delay: 0.5, duration: 0.5 }}
+  >
+    <FaWallet className="text-5xl text-white" />
+    <h3 className="text-2xl font-bold mt-4">Recharge</h3>
+    <p className="text-gray-200">Add balance to your wallet.</p>
+    <Link
+      to="/recharge"
+      className="mt-4 bg-blue-700 text-white py-3 px-6 rounded-full hover:bg-blue-800 transition duration-200"
+    >
+      Go to Recharge
+    </Link>
+  </motion.div>
+           {/* Card 2: Pay Bills */}
+  <motion.div
+    className={`flex flex-col items-center shadow-lg rounded-3xl p-6 hover:shadow-2xl transition duration-300 ease-in-out transform hover:scale-105 ${darkMode ? "bg-gradient-to-r from-green-600 to-green-500 text-white" : "bg-gradient-to-r from-green-400 to-green-500 text-white"}`}
+    initial={{ opacity: 0 }}
+    animate={{ opacity: 1 }}
+    transition={{ delay: 0.7, duration: 0.5 }}
+  >
+    <FaRegMoneyBillAlt className="text-5xl text-white" />
+    <h3 className="text-2xl font-bold mt-4">Pay Bills</h3>
+    <p className="text-gray-200">Pay your utility bills easily.</p>
+    <Link
+      to="/pay-bills"
+      className="mt-4 bg-green-700 text-white py-3 px-6 rounded-full hover:bg-green-800 transition duration-200"
+    >
+      Go to Bills
+    </Link>
+  </motion.div>
+
+  {/* Card 3: Money Transfer */}
+  <motion.div
+    className={`flex flex-col items-center shadow-lg rounded-3xl p-6 hover:shadow-2xl transition duration-300 ease-in-out transform hover:scale-105 ${darkMode ? "bg-gradient-to-r from-purple-600 to-purple-500 text-white" : "bg-gradient-to-r from-purple-400 to-purple-500 text-white"}`}
+    initial={{ opacity: 0 }}
+    animate={{ opacity: 1 }}
+    transition={{ delay: 0.9, duration: 0.5 }}
+  >
+    <FaCreditCard className="text-5xl text-white" />
+    <h3 className="text-2xl font-bold mt-4">Transfer Money</h3>
+    <p className="text-gray-200">Send money to anyone instantly.</p>
+    <Link
+      to="/transfer"
+      className="mt-4 bg-purple-700 text-white py-3 px-6 rounded-full hover:bg-purple-800 transition duration-200"
+    >
+      Send Money
+    </Link>
+  </motion.div>
+
+  {/* Card 4: Pay Contacts */}
+  <motion.div
+    className={`flex flex-col items-center shadow-lg rounded-3xl p-6 hover:shadow-2xl transition duration-300 ease-in-out transform hover:scale-105 ${darkMode ? "bg-gradient-to-r from-green-600 to-green-500 text-white" : "bg-gradient-to-r from-green-400 to-green-500 text-white"}`}
+    initial={{ opacity: 0 }}
+    animate={{ opacity: 1 }}
+    transition={{ delay: 1.1, duration: 0.5 }}
+  >
+    <FaUserCircle className="text-5xl text-white" />
+    <h3 className="text-2xl font-bold mt-4">Pay Contacts</h3>
+    <p className="text-gray-200">Pay your Contacts easily.</p>
+    <Link
+      to="/payContacts"
+      className="mt-4 bg-green-700 text-white py-3 px-6 rounded-full hover:bg-green-800 transition duration-200"
+    >
+      Go to Contacts
+    </Link>
+  </motion.div>
   
           {/* Card 4: Balance&History*/}
           <motion.div
-               className={`flex flex-col items-center shadow-lg rounded-lg p-6 hover:shadow-xl transition duration-300 ease-in-out transform hover:scale-105 ${
-                darkMode ? "bg-gray-800 text-white" : "bg-white text-gray-900"
-              }`}
+                className={`flex flex-col items-center shadow-lg rounded-3xl p-6 hover:shadow-2xl transition duration-300 ease-in-out transform hover:scale-105 ${darkMode ? "bg-gradient-to-r from-purple-600 to-purple-500 text-white" : "bg-gradient-to-r from-purple-400 to-purple-500 text-white"}`}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 1.7, duration: 0.5 }}
           >
-            <FaBalanceScale className="text-4xl text-green-500" />
-            <h3 className="text-xl font-semibold mt-4">Balance&History</h3>
-            <p className="text-gray-500">Check Balance&History.</p>
+            <FaBalanceScale className="text-5xl text-white" />
+            <h3 className="text-2xl font-bold mt-4">Balance&History</h3>
+            <p className="text-gray-200">Check Balance&History.</p>
             <Link
               to="/balanceHis"
-              className="mt-4 bg-green-600 text-white py-2 px-4 rounded-full hover:bg-green-700 transition duration-200"
+              className="mt-4 bg-purple-700 text-white py-3 px-6 rounded-full hover:bg-green-800 transition duration-200"
             >
               Balance&History
             </Link>
           </motion.div>
          {/* Card 1: Flight Booking */}
 <motion.div
-     className={`flex flex-col items-center shadow-lg rounded-lg p-6 hover:shadow-xl transition duration-300 ease-in-out transform hover:scale-105 ${
-      darkMode ? "bg-gray-800 text-white" : "bg-white text-gray-900"
-    }`}
+   className={`flex flex-col items-center shadow-lg rounded-3xl p-6 hover:shadow-2xl transition duration-300 ease-in-out transform hover:scale-105 ${darkMode ? "bg-gradient-to-r from-green-600 to-green-500 text-white" : "bg-gradient-to-r from-green-400 to-green-500 text-white"}`}
   initial={{ opacity: 0 }}
   animate={{ opacity: 1 }}
   transition={{ delay: 0.5, duration: 0.5 }}
 >
-  <FaPlane className="text-4xl text-blue-500" />
-  <h3 className="text-xl font-semibold mt-4">Check Flights</h3>
-  <p className="text-gray-500">Flight Booking</p>
+  <FaPlane className="text-5xl text-white" />
+  <h3 className="text-2xl font-bold mt-4">Check Flights</h3>
+  <p className="text-gray-200">Flight Booking</p>
   <Link
     to="/flight-booking"
-    className="mt-4 bg-blue-600 text-white py-2 px-4 rounded-full hover:bg-blue-700 transition duration-200"
+    className="mt-4 bg-green-700 text-white py-3 px-6 rounded-full hover:bg-green-800 transition duration-200"
   >
     Flight Booking
   </Link>
@@ -329,19 +308,17 @@ const Home = () => {
 
 {/* Card 2: Train Booking */}
 <motion.div
-     className={`flex flex-col items-center shadow-lg rounded-lg p-6 hover:shadow-xl transition duration-300 ease-in-out transform hover:scale-105 ${
-      darkMode ? "bg-gray-800 text-white" : "bg-white text-gray-900"
-    }`}
+      className={`flex flex-col items-center shadow-lg rounded-3xl p-6 hover:shadow-2xl transition duration-300 ease-in-out transform hover:scale-105 ${darkMode ? "bg-gradient-to-r from-purple-600 to-purple-500 text-white" : "bg-gradient-to-r from-purple-400 to-purple-500 text-white"}`}
   initial={{ opacity: 0 }}
   animate={{ opacity: 1 }}
   transition={{ delay: 1.0, duration: 0.5 }}
 >
-  <FaTrain className="text-4xl text-red-500" />
-  <h3 className="text-xl font-semibold mt-4">Train Booking</h3>
-  <p className="text-gray-500">Check Trains</p>
+  <FaTrain className="text-5xl text-white" />
+  <h3 className="text-2xl font-bold mt-4">Train Booking</h3>
+  <p className="text-gray-200">Check Trains</p>
   <Link
     to="/train-booking"
-    className="mt-4 bg-red-600 text-white py-2 px-4 rounded-full hover:bg-red-700 transition duration-200"
+     className="mt-4 bg-purple-700 text-white py-3 px-6 rounded-full hover:bg-green-800 transition duration-200"
   >
     Check Trains
   </Link>
@@ -349,16 +326,14 @@ const Home = () => {
 
 {/* Card 3: Bus Booking */}
 <motion.div
-      className={`flex flex-col items-center shadow-lg rounded-lg p-6 hover:shadow-xl transition duration-300 ease-in-out transform hover:scale-105 ${
-        darkMode ? "bg-gray-800 text-white" : "bg-white text-gray-900"
-      }`}
+      className={`flex flex-col items-center shadow-lg rounded-3xl p-6 hover:shadow-2xl transition duration-300 ease-in-out transform hover:scale-105 ${darkMode ? "bg-gradient-to-r from-green-600 to-green-500 text-white" : "bg-gradient-to-r from-green-400 to-green-500 text-white"}`}
   initial={{ opacity: 0 }}
   animate={{ opacity: 1 }}
   transition={{ delay: 1.5, duration: 0.5 }}
 >
-  <FaBus className="text-4xl text-green-500" />
-  <h3 className="text-xl font-semibold mt-4">Bus Booking</h3>
-  <p className="text-gray-500">Check Buses</p>
+  <FaBus className="text-5xl text-white" />
+  <h3 className="text-2xl font-bold mt-4">Bus Booking</h3>
+  <p className="text-gray-200">Check Buses</p>
   <Link
     to="/bus-booking"
     className="mt-4 bg-green-600 text-white py-2 px-4 rounded-full hover:bg-green-700 transition duration-200"
@@ -370,25 +345,65 @@ const Home = () => {
   
           {/* Card 5: QR Code Payments */}
           <motion.div
-                className={`flex flex-col items-center shadow-lg rounded-lg p-6 hover:shadow-xl transition duration-300 ease-in-out transform hover:scale-105 ${
-                  darkMode ? "bg-gray-800 text-white" : "bg-white text-gray-900"
-                }`}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 2.1, duration: 0.5 }}
-          >
-            <FaQrcode className="text-4xl text-yellow-500" />
-            <h3 className="text-xl font-semibold mt-4">QR Payments</h3>
-            <p className="text-gray-500">Pay quickly using QR codes.</p>
-            <Link
-              to="/qr-scanner"
-              className="mt-4 bg-yellow-600 text-white py-2 px-4 rounded-full hover:bg-yellow-700 transition duration-200"
-            >
-              Scan & Pay
-            </Link>
-</motion.div>
+    className={`flex flex-col items-center shadow-lg rounded-3xl p-6 hover:shadow-2xl transition duration-300 ease-in-out transform hover:scale-105 ${darkMode ? "bg-gradient-to-r from-purple-600 to-purple-500 text-white" : "bg-gradient-to-r from-purple-400 to-purple-500 text-white"}`}
+    initial={{ opacity: 0 }}
+    animate={{ opacity: 1 }}
+    transition={{ delay: 1.3, duration: 0.5 }}
+  >
+    <FaQrcode className="text-5xl text-white" />
+    <h3 className="text-2xl font-bold mt-4">QR Payments</h3>
+    <p className="text-gray-200">Pay quickly using QR codes.</p>
+    <Link
+      to="/qr-scanner"
+      className="mt-4 bg-purple-700 text-white py-3 px-6 rounded-full hover:bg-green-800 transition duration-200"
+    >
+      Scan & Pay
+    </Link>
+  </motion.div>
         </div>
-        
+          {/* Instant Loan Application */}
+<div
+  className={`mt-8 p-6 rounded-xl shadow-xl transition-all duration-300 ${darkMode ? "bg-gray-800 text-white" : "bg-white text-gray-900"}`}
+>
+  <motion.h4
+    className="text-2xl font-semibold tracking-tight"
+    initial={{ opacity: 0 }}
+    animate={{ opacity: 1 }}
+    transition={{ delay: 0.5, duration: 0.7 }}
+  >
+    💰 Instant Loan Application
+  </motion.h4>
+  <p className="mt-2 text-gray-500 dark:text-gray-400">
+    Apply for an instant loan of up to ₹5000. Fast, simple, and hassle-free!
+  </p>
+  <div className="mt-4 space-y-4">
+    <div className="relative">
+      <input
+        type="number"
+        value={loanAmount}
+        onChange={(e) => setLoanAmount(e.target.value)}
+        className="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:focus:ring-blue-300 transition-all duration-300"
+        placeholder="Enter loan amount"
+      />
+      <div className="absolute top-0 right-0 mt-3 mr-4 text-gray-500 dark:text-gray-300">
+        ₹
+      </div>
+    </div>
+    <button
+      onClick={handleLoanApplication}
+      className="w-full px-6 py-3 bg-purple-500 text-white rounded-lg shadow-md hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-yellow-400 transition-all duration-300"
+    >
+      Apply for Loan
+    </button>
+  </div>
+  <div className="mt-4 flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
+    <span>Need assistance? </span>
+    <a href="tel:+911234567890" className="underline text-yellow-500 hover:text-yellow-600">
+      Call Support
+    </a>
+  </div>
+</div>
+
 
         {/* Chat Section */}
         <motion.div
