@@ -18,7 +18,7 @@ const SignupPage = () => {
 
   const handleGoogleLogin = async (response) => {
     try {
-      const googleResponse = await axios.post(`${backendUrl}/api/auth/google`, {
+      const googleResponse = await axios.post(`https://${import.meta.env.VITE_BACKEND}/api/auth/google`, {
         token: response.credential,
       });
       localStorage.setItem("authToken", googleResponse.data.token);
@@ -35,7 +35,7 @@ const SignupPage = () => {
       return;
     }
     try {
-      await axios.post(`${backendUrl}/api/auth/send-otp`, { phoneNumber });
+      await axios.post(`https://${import.meta.env.VITE_BACKEND}/api/auth/send-otp`, { phoneNumber });
       setIsOtpSent(true);
       setError("");
       alert(`OTP sent to ${phoneNumber}`);
@@ -57,7 +57,7 @@ const SignupPage = () => {
     setIsLoading(true);
     try {
       const signupData = phoneNumber ? { phoneNumber, otp } : { email, password };
-      await axios.post(`${backendUrl}/api/auth/signup`, signupData);
+      await axios.post(`https://${import.meta.env.VITE_BACKEND}/api/auth/signup`, signupData);
       alert("Signup Successful!");
     } catch (err) {
       setError("Error during signup. Please try again.");

@@ -57,7 +57,7 @@ const TrainBooking = () => {
       setLoading(true);
       try {
         const response = await fetch(
-          `http://localhost:8000/api/trains/get-trains?from=${formData.from}&to=${formData.to}&date=${formData.date}&class=${formData.class}`
+          `https://${import.meta.env.VITE_BACKEND}/api/trains/get-trains?from=${formData.from}&to=${formData.to}&date=${formData.date}&class=${formData.class}`
         );
         const data = await response.json();
         setAvailableTrains(data);
@@ -96,7 +96,7 @@ const TrainBooking = () => {
   const handlePayment = async (price) => {
     try {
       // Step 1: Create an order using the backend API
-      const { data } = await axios.post("http://localhost:8000/create-order", {
+      const { data } = await axios.post(`https://${import.meta.env.VITE_BACKEND}/create-order`, {
         amount: price,
       });
   
@@ -112,7 +112,7 @@ const TrainBooking = () => {
           handler: async function (response) {
             // Step 3: Verify the payment once done
             const verification = await axios.post(
-              "http://localhost:8000/verify-payment",
+              `https://${import.meta.env.VITE_BACKEND}/verify-payment`,
               {
                 razorpay_order_id: response.razorpay_order_id,
                 razorpay_payment_id: response.razorpay_payment_id,

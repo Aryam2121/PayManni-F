@@ -18,7 +18,7 @@ const LoanApplication = () => {
   useEffect(() => {
     const fetchLoans = async () => {
       try {
-        const response = await fetch('http://localhost:8000/api/loans');
+        const response = await fetch(`https://${import.meta.env.VITE_BACKEND}api/loans`);
         const data = await response.json();
         setLoans(data);
       } catch (error) {
@@ -33,7 +33,7 @@ const LoanApplication = () => {
     const fetchLoanById = async () => {
       if (loanId) {
         try {
-          const response = await fetch(`http://localhost:8000/api/loans/${loanId}`);
+          const response = await fetch(`https://${import.meta.env.VITE_BACKEND}/api/loans/${loanId}`);
           const data = await response.json();
           if (response.status === 200) {
             setAmount(data.amount);
@@ -97,7 +97,7 @@ const LoanApplication = () => {
     }, 300);
 
     try {
-      const response = await fetch('http://localhost:8000/api/loans/apply', {
+      const response = await fetch(`https://${import.meta.env.VITE_BACKEND}/api/loans/apply`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

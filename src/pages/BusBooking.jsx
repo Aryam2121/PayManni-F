@@ -22,7 +22,7 @@ export default function BusBooking() {
   const fetchBuses = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`https://api.example.com/buses?from=${from}&to=${to}&seatType=${seatType}`, {
+      const response = await fetch(`https://${import.meta.env.VITE_BACKEND}/buses?from=${from}&to=${to}&seatType=${seatType}`, {
         method: 'GET',
         headers: {
           'X-TripGo-Key': 'e43957128fb7bd8d7a947caecd05cf22',
@@ -56,7 +56,7 @@ export default function BusBooking() {
     };
   
     try {
-      const response = await fetch('https://api.example.com/bookBus', {
+      const response = await fetch(`https://${import.meta.env.VITE_BACKEND}/bookBus`, {
         method: 'POST',
         headers: {
           'X-TripGo-Key': 'e43957128fb7bd8d7a947caecd05cf22',

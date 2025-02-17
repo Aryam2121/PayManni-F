@@ -1,17 +1,36 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import PayManni from "../assets/PayManni.png";
 import { FaSearch, FaBell, FaChevronDown, FaBars, FaTimes, FaSun, FaMoon } from "react-icons/fa";
 import panda from "../assets/panda.jpg";
+import { useClerk } from "@clerk/clerk-react";
+import { useNavigate } from "react-router-dom";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const [darkMode, setDarkMode] = useState(true);
+  const [darkMode, setDarkMode] = useState(() => localStorage.getItem("darkMode") === "true");
 
+  const { signOut } = useClerk();
+  const navigate = useNavigate();
+
+  // Toggle Functions
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
   const toggleProfileDropdown = () => setIsProfileOpen(!isProfileOpen);
-  const toggleDarkMode = () => setDarkMode(!darkMode);
+  const toggleDarkMode = () => {
+    const newMode = !darkMode;
+    setDarkMode(newMode);
+    localStorage.setItem("darkMode", newMode); // Save preference
+  };
+
+  const handleLogout = async () => {
+    await signOut();
+    navigate("/sign-in");
+  };
+
+  useEffect(() => {
+    document.documentElement.classList.toggle("dark", darkMode);
+  }, [darkMode]);
 
   return (
     <motion.header
@@ -61,6 +80,7 @@ const Header = () => {
 
       {/* Actions */}
       <div className="flex items-center space-x-6">
+        {/* Notifications */}
         <motion.div className="relative cursor-pointer" whileHover={{ scale: 1.1 }}>
           <FaBell className="text-lg" />
           <span className="absolute -top-1 -right-2 bg-red-500 text-white text-xs rounded-full px-2 py-0.5">
@@ -68,45 +88,52 @@ const Header = () => {
           </span>
         </motion.div>
 
-       {/* Profile Dropdown */}
-<div className="relative">
-  <motion.div
-    className="cursor-pointer flex items-center space-x-2"
-    onClick={toggleProfileDropdown}
-    whileHover={{ scale: 1.1 }}
-  >
-    <img src={panda} alt="Profile" className="rounded-full w-10 h-10" />
-    <FaChevronDown className="text-lg text-gray-500" />
-  </motion.div>
-
-  {isProfileOpen && (
-    <motion.div
-      className={`absolute right-0 mt-2 rounded-lg shadow-lg w-48 transition-all duration-300 ${
-        darkMode
-          ? "bg-gray-900 text-white border border-gray-700"
-          : "bg-white text-gray-900 border border-gray-200"
-      }`}
-      initial={{ opacity: 0, y: -10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-    >
-      <ul>
-        {["Profile", "Settings", "Logout"].map((item) => (
-          <li
-            key={item}
-            className={`px-4 py-3 cursor-pointer transition duration-200 ${
-              darkMode ? "hover:bg-gray-800" : "hover:bg-gray-200"
-            }`}
+        {/* Profile Dropdown */}
+        <div className="relative">
+          <motion.div
+            className="cursor-pointer flex items-center space-x-2"
+            onClick={toggleProfileDropdown}
+            whileHover={{ scale: 1.1 }}
           >
-            <a href={`/${item.toLowerCase()}`} className="block w-full">
-              {item}
-            </a>
-          </li>
-        ))}
-      </ul>
-    </motion.div>
-  )}
-</div>
+            <img src={panda} alt="Profile" className="rounded-full w-10 h-10" />
+            <FaChevronDown className="text-lg text-gray-500" />
+          </motion.div>
+
+          {isProfileOpen && (
+            <motion.div
+              className={`absolute right-0 mt-2 rounded-lg shadow-lg w-48 transition-all duration-300 ${
+                darkMode ? "bg-gray-900 text-white border border-gray-700" : "bg-white text-gray-900 border border-gray-200"
+              }`}
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <ul>
+                {["Profile", "Settings"].map((item) => (
+                  <li
+                    key={item}
+                    className={`px-4 py-3 cursor-pointer transition duration-200 ${
+                      darkMode ? "hover:bg-gray-800" : "hover:bg-gray-200"
+                    }`}
+                    onClick={() => setIsProfileOpen(false)} // Close dropdown after click
+                  >
+                    <a href={`/${item.toLowerCase()}`} className="block w-full">
+                      {item}
+                    </a>
+                  </li>
+                ))}
+                <li
+                  className={`px-4 py-3 cursor-pointer transition duration-200 ${
+                    darkMode ? "hover:bg-gray-800" : "hover:bg-gray-200"
+                  }`}
+                  onClick={handleLogout} // Logout function
+                >
+                  Logout
+                </li>
+              </ul>
+            </motion.div>
+          )}
+        </div>
 
         {/* Dark Mode Toggle */}
         <motion.button
@@ -139,8 +166,8 @@ const Header = () => {
         >
           <ul className="space-y-4 text-lg font-medium">
             {["Home", "Wallet", "Recharge", "Transactions"].map((item) => (
-              <li key={item}>
-                <a href={`/${item.toLowerCase()}`} className="block hover:text-indigo-500" onClick={() => setIsMenuOpen(false)}>
+              <li key={item} onClick={() => setIsMenuOpen(false)}>
+                <a href={`/${item.toLowerCase()}`} className="block hover:text-indigo-500">
                   {item}
                 </a>
               </li>

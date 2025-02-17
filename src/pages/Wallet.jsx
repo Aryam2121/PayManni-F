@@ -14,7 +14,7 @@ const Wallet = () => {
   useEffect(() => {
     const fetchWalletData = async () => {
       try {
-        const response = await axios.get("http://localhost:8000/api/wallet");
+        const response = await axios.get(`https://${import.meta.env.VITE_BACKEND}/api/wallet`);
         setBalance(response.data.balance);
         setTransactions(response.data.transactions);
       } catch (error) {
@@ -37,7 +37,7 @@ const Wallet = () => {
 
   const handleDeposit = async (amount) => {
     try {
-      const response = await axios.post(`http://localhost:8000/api/deposit`, { amount });
+      const response = await axios.post(`https://${import.meta.env.VITE_BACKEND}/api/deposit`, { amount });
       setBalance(response.data.balance);
       addTransaction(amount, "Deposit");
     } catch (error) {
@@ -48,7 +48,7 @@ const Wallet = () => {
   const handleWithdraw = async () => {
     if (parseFloat(withdrawAmount) <= balance) {
       try {
-        const response = await axios.post(`http://localhost:8000/api/withdraw`, { amount: withdrawAmount });
+        const response = await axios.post(`https://${import.meta.env.VITE_BACKEND}/api/withdraw`, { amount: withdrawAmount });
         setBalance(response.data.balance);
         addTransaction(parseFloat(withdrawAmount), "Withdraw");
         setWithdrawAmount('');

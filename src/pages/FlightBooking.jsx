@@ -40,7 +40,7 @@ const FlightBooking = () => {
 
     setIsLoading(true);
     try {
-      const { data } = await axios.post("http://localhost:8000/api/search", formData);
+      const { data } = await axios.post(`https://${import.meta.env.VITE_BACKEND}/api/search`, formData);
       setSearchResults(data.flights || []);
       setShowResults(true);
     } catch (error) {
@@ -80,7 +80,7 @@ const FlightBooking = () => {
   useEffect(() => {
     const fetchFlights = async () => {
       try {
-        const response = await axios.get("http://localhost:8000/api/fetch");
+        const response = await axios.get(`https://${import.meta.env.VITE_BACKEND}/api/fetch`);
         setSearchResults(response.data);
       } catch (error) {
         console.error("Error fetching flights:", error);
@@ -92,7 +92,7 @@ const FlightBooking = () => {
   const handlePayment = async (price) => {
     try {
       // Step 1: Create an order using the backend API
-      const { data } = await axios.post("http://localhost:8000/create-order", {
+      const { data } = await axios.post(`https://${import.meta.env.VITE_BACKEND}/create-order`, {
         amount: price,
       });
   
@@ -108,7 +108,7 @@ const FlightBooking = () => {
           handler: async function (response) {
             // Step 3: Verify the payment once done
             const verification = await axios.post(
-              "http://localhost:8000/verify-payment",
+              `https://${import.meta.env.VITE_BACKEND}/verify-payment`,
               {
                 razorpay_order_id: response.razorpay_order_id,
                 razorpay_payment_id: response.razorpay_payment_id,

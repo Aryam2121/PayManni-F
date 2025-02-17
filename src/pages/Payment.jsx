@@ -4,7 +4,7 @@ const PaymentPage = () => {
   const [order, setOrder] = useState(null);
 
   const fetchOrder = async () => {
-    const response = await fetch("http://localhost:8000/create-order", {
+    const response = await fetch(`https://${import.meta.env.VITE_BACKEND}/create-order`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ amount: 500 }), // ₹500
@@ -24,7 +24,7 @@ const PaymentPage = () => {
       description: "Premium Subscription",
       order_id: order.id,
       handler: async function (response) {
-        const verifyResponse = await fetch("http://localhost:8000/verify-payment", {
+        const verifyResponse = await fetch(`https://${import.meta.env.VITE_BACKEND}/verify-payment`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(response),

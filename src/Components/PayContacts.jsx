@@ -13,14 +13,13 @@ const PaymentContacts = () => {
   const [loading, setLoading] = useState(false);
   const [recentTransactions, setRecentTransactions] = useState([]);
 
-  const apiBaseUrl = `http://localhost:8000/api`;
 
   useEffect(() => {
     const fetchInitialData = async () => {
       try {
         const [contactsRes, transactionsRes] = await Promise.all([
-          axios.get(`${apiBaseUrl}/contacts/get`),
-          axios.get(`${apiBaseUrl}/transactions/get`),
+          axios.get(`https://${import.meta.env.VITE_BACKEND}/contacts/get`),
+          axios.get(`https://${import.meta.env.VITE_BACKEND}/transactions/get`),
         ]);
         setContacts(contactsRes.data);
         setRecentTransactions(transactionsRes.data);
@@ -36,7 +35,7 @@ const PaymentContacts = () => {
   const handleAddContact = async () => {
     if (newContact.name && newContact.phone) {
       try {
-        const res = await axios.post(`${apiBaseUrl}/contacts/add`, newContact);
+        const res = await axios.post(`https://${import.meta.env.VITE_BACKEND}/contacts/add`, newContact);
         setContacts([...contacts, res.data]);
         setNewContact({ name: '', phone: '' });
         toast.success('Contact added successfully!');
@@ -66,7 +65,7 @@ const PaymentContacts = () => {
       const paymentMethod = "creditCard";  // Or dynamically based on user selection
       const userId = "userId_value";      // Replace with actual user ID
 
-      const res = await axios.post(`${apiBaseUrl}/transactions/send`, {
+      const res = await axios.post(`https://${import.meta.env.VITE_BACKEND}/transactions/send`, {
         amount: parsedAmount,
         contacts: selectedContacts,
         paymentMethod: paymentMethod,
@@ -98,7 +97,7 @@ const PaymentContacts = () => {
       const contact = contacts.find((c) => c.id === contactId);
       const updatedContact = { ...contact, isFavorite: !contact.isFavorite };
 
-      await axios.put(`${apiBaseUrl}/contacts/${contactId}`, updatedContact);
+      await axios.put(`https://${import.meta.env.VITE_BACKEND}/contacts/${contactId}`, updatedContact);
       setContacts((prevContacts) =>
         prevContacts.map((c) =>
           c.id === contactId ? updatedContact : c
