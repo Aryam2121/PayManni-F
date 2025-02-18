@@ -177,7 +177,11 @@ import SigninPage from "./pages/Signin";
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
-  return <SignedIn>{children}</SignedIn>;
+  return (
+    <SignedIn>
+      {children}
+    </SignedIn>
+  );
 };
 
 function App() {
@@ -192,18 +196,13 @@ function App() {
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/sign-up" element={<SignUp />} />
 
-          {/* Handle Root Route Based on Authentication */}
+          {/* Redirect to sign-in or home based on authentication */}
           <Route
             path="/"
             element={
-              <>
-                <SignedOut>
-                  <Navigate to="/sign-in" replace />
-                </SignedOut>
-                <SignedIn>
-                  <Navigate to="/home" replace />
-                </SignedIn>
-              </>
+              <SignedOut>
+                <Navigate to="/sign-in" replace />
+              </SignedOut>
             }
           />
 
