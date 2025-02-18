@@ -56,7 +56,7 @@ export default function BusBooking() {
     };
   
     try {
-      const response = await fetch(`https://${import.meta.env.VITE_BACKEND}/bookBus`, {
+      const response = await fetch(`https://${import.meta.env.VITE_BACKEND}/bookBus`,{
         method: 'POST',
         headers: {
           'X-TripGo-Key': 'e43957128fb7bd8d7a947caecd05cf22',
