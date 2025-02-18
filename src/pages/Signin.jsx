@@ -1,10 +1,12 @@
 import { useEffect } from "react";
 import { motion } from "framer-motion";
-
+import { useNavigate } from "react-router-dom";
 const SigninPage = () => {
+  const navigate = useNavigate();
   useEffect(() => {
     setTimeout(() => {
       window.location.href = "https://profound-scorpion-72.accounts.dev/sign-in";
+
     }, 2500); 
   }, []);
 
