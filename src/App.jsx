@@ -86,13 +86,10 @@ import LoanApplication from "./pages/LoanApp";
 import BillPaymentReminder from "./pages/BillPaymentRem";
 import SigninPage from "./pages/Signin";
 // Protected Route Component
-const ProtectedRoute = ({ children }) => {
-  return (
-    <SignedIn>
-      {children}
-    </SignedIn>
-  );
-};
+const ProtectedRoute = ({ children }) => (
+  <SignedIn>{children}</SignedIn>
+);
+
 
 function App() {
   return (
@@ -113,7 +110,7 @@ function App() {
         <SigninPage />
       </SignedOut>
       <SignedIn>
-        <Navigate to="/home" />
+        <Navigate to="/home" replace />
       </SignedIn>
     </>
   }
