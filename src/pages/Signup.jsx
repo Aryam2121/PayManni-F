@@ -14,14 +14,15 @@ const SignupPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [isOtpSent, setIsOtpSent] = useState(false);
-  const backendUrl = import.meta.env.VITE_BACKEND;
+
+ 
 
   const handleGoogleLogin = async (response) => {
     try {
-      const googleResponse = await axios.post(`https://${import.meta.env.VITE_BACKEND}/api/auth/google`, {
+      const res = await axios.post(`https://${import.meta.env.VITE_BACKEND}/api/auth/google`, {
         token: response.credential,
       });
-      localStorage.setItem("authToken", googleResponse.data.token);
+      localStorage.setItem("authToken", res.data.token);
       alert("Google Sign-Up Successful!");
     } catch (err) {
       setError("Error during Google Sign-Up. Please try again.");
@@ -35,32 +36,43 @@ const SignupPage = () => {
       return;
     }
     try {
-      await axios.post(`https://${import.meta.env.VITE_BACKEND}/api/auth/send-otp`, { phoneNumber });
-      setIsOtpSent(true);
-      setError("");
-      alert(`OTP sent to ${phoneNumber}`);
+      const res = await axios.post(`https://${import.meta.env.VITE_BACKEND}/api/auth/send-otp`, { phoneNumber });
+      if (res.data.success) {
+        setIsOtpSent(true);
+        setError("");
+        alert(`OTP sent to ${phoneNumber}`);
+      }
     } catch (err) {
-      setError("Error sending OTP. Please try again.");
+      setError(err.response?.data?.message || "Error sending OTP. Please try again.");
       console.error(err);
     }
   };
 
   const handleSignup = async () => {
-    if (!phoneNumber && !email) {
+    if (!email && !phoneNumber) {
       setError("Please enter either your phone number or email.");
       return;
     }
     if (phoneNumber && !otp) {
-      setError("Please enter the OTP sent to your phone number.");
+      setError("Please enter the OTP sent to your phone.");
       return;
     }
+    if (password !== confirmPassword) {
+      setError("Passwords do not match.");
+      return;
+    }
+
     setIsLoading(true);
     try {
-      const signupData = phoneNumber ? { phoneNumber, otp } : { email, password };
-      await axios.post(`https://${import.meta.env.VITE_BACKEND}/api/auth/signup`, signupData);
+      const signupData = phoneNumber
+        ? { phoneNumber, otp }
+        : { email, password };
+
+      const res = await axios.post(`https://${import.meta.env.VITE_BACKEND}/api/auth/signup`, signupData);
       alert("Signup Successful!");
+      localStorage.setItem("authToken", res.data.token);
     } catch (err) {
-      setError("Error during signup. Please try again.");
+      setError(err.response?.data?.message || "Error during signup. Please try again.");
       console.error(err);
     }
     setIsLoading(false);
@@ -81,7 +93,6 @@ const SignupPage = () => {
         <div className="w-full md:w-1/2 bg-white p-8 rounded-r-lg shadow-lg">
           <h2 className="text-3xl font-semibold text-center text-gray-800 mb-8">Sign Up for PayManni</h2>
 
-          {/* Displaying error message */}
           {error && <div className="text-red-500 text-sm mb-4">{error}</div>}
 
           <div>
@@ -173,12 +184,8 @@ const SignupPage = () => {
           {/* Google Sign-Up Button */}
           <div className="mt-4 text-center">
             <GoogleLogin
-              clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}
-              buttonText="Sign Up with Google"
               onSuccess={handleGoogleLogin}
-              onFailure={handleGoogleLogin}
-              cookiePolicy="single_host_origin"
-              className="w-full bg-red-600 text-white py-3 rounded-md hover:bg-red-700"
+              onError={() => setError("Google Sign-Up failed. Try again.")}
             />
           </div>
         </div>

@@ -14,7 +14,7 @@ const LoginPage = () => {
   const [generatedOtp, setGeneratedOtp] = useState(""); // Mocked OTP
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-  const backendUrl = import.meta.env.VITE_BACKEND;
+ 
   // Email login
   const handleEmailLogin = async () => {
     if (!email || !password) {
@@ -28,7 +28,7 @@ const LoginPage = () => {
     setError("");
     setIsLoading(true);
     try {
-      const response = await axios.post(`${backendUrl}/api/auth/login`, { email, password });
+      const response = await axios.post(`https://${import.meta.env.VITE_BACKEND}/api/auth/login`, { email, password });
       if (response.data.success) {
         alert("Login Successful!");
       } else {
@@ -50,7 +50,7 @@ const LoginPage = () => {
     setError("");
     setIsLoading(true);
     try {
-      const response = await axios.post(`${backendUrl}/api/auth/send-otp`, { phoneNumber: phone });
+      const response = await axios.post(`https://${import.meta.env.VITE_BACKEND}/api/auth/send-otp`, { phoneNumber: phone });
       if (response.data.success) {
         setGeneratedOtp(response.data.otp); // Save OTP for verification
         alert(`Your OTP is ${response.data.otp}`); // Replace with real OTP service
@@ -77,7 +77,7 @@ const LoginPage = () => {
   const handleGoogleLoginSuccess = async (response) => {
     try {
       const googleToken = response.credential; // Get the Google OAuth token
-      const res = await axios.post(`${backendUrl}/api/auth/google-login`, { token: googleToken });
+      const res = await axios.post(`https://${import.meta.env.VITE_BACKEND}/api/auth/google`, { token: googleToken });
       if (res.data.success) {
         const { token } = res.data;
         localStorage.setItem("authToken", token); // Store the token
