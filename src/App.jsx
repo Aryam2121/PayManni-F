@@ -85,11 +85,16 @@ import FlightBooking from "./pages/FlightBooking";
 import LoanApplication from "./pages/LoanApp";
 import BillPaymentReminder from "./pages/BillPaymentRem";
 import SigninPage from "./pages/Signin";
+
 // Protected Route Component
 const ProtectedRoute = ({ children }) => (
-  <SignedIn>{children}</SignedIn>
+  <>
+    <SignedIn>{children}</SignedIn>
+    <SignedOut>
+      <Navigate to="/sign-in" replace />
+    </SignedOut>
+  </>
 );
-
 
 function App() {
   return (
@@ -98,25 +103,26 @@ function App() {
       <main className="flex-grow pt-12">
         <Routes>
           {/* Public Routes */}
-          {/* <Route path="/" element={<Home />} /> */}
           <Route path="/home" element={<Home />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
-          <Route
-  path="/"
-  element={
-    <>
-      <SignedOut>
-        <SigninPage />
-      </SignedOut>
-      <SignedIn>
-        <Navigate to="/home" replace />
-      </SignedIn>
-    </>
-  }
-/>
-
+          <Route path="/sign-in" element={<SignIn />} />
           <Route path="/sign-up" element={<SignUp />} />
+
+          {/* Default Route: Redirect Based on Auth */}
+          <Route
+            path="/"
+            element={
+              <>
+                <SignedOut>
+                  <SigninPage />
+                </SignedOut>
+                <SignedIn>
+                  <Navigate to="/home" replace />
+                </SignedIn>
+              </>
+            }
+          />
 
           {/* Protected Routes */}
           <Route path="/wallet" element={<ProtectedRoute><Wallet /></ProtectedRoute>} />
@@ -145,6 +151,7 @@ function App() {
 }
 
 export default App;
+
 // import React from "react";
 // import { Routes, Route, Navigate } from "react-router-dom";
 // import { SignedIn, SignedOut, SignIn, SignUp } from "@clerk/clerk-react";
