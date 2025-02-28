@@ -16,7 +16,6 @@ const TrainBooking = () => {
     date: '',
     passengers: 1,
     class: 'Sleeper',
-    passengerType: 'Adult',
     train: '',
     price: 0,
     availableSeats: 0,
@@ -31,110 +30,97 @@ const TrainBooking = () => {
   const cities = ['New York', 'Los Angeles', 'Chicago', 'San Francisco', 'Boston'];
   const discountCodes = { 'FIRST20': 0.2, 'STUDENT10': 0.1 }; // Example promo codes
 
+  
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value,
-      from: name === 'fromCustom' ? value : formData.from,
-      to: name === 'toCustom' ? value : formData.to,
-    });
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
-  
 
   const validateForm = () => {
     const newErrors = {};
     if (!formData.from) newErrors.from = 'Departure city is required';
     if (!formData.to) newErrors.to = 'Destination city is required';
-    if (!formData.date || new Date(formData.date) < new Date()) newErrors.date = 'Please select a valid travel date';
+    if (!formData.date || new Date(formData.date) < new Date()) newErrors.date = 'Please select a valid date';
     if (formData.passengers < 1) newErrors.passengers = 'At least 1 passenger is required';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (validateForm()) {
-      setLoading(true);
-      try {
-        const response = await fetch(
-          `https://${import.meta.env.VITE_BACKEND}/api/trains/get-trains?from=${formData.from}&to=${formData.to}&date=${formData.date}&class=${formData.class}`
-        );
-        const data = await response.json();
-        setAvailableTrains(data);
-  
-        // Dynamically update price when a train is selected
-        const selectedTrain = data.find(train => train.id === formData.train);
-        setFormData({
-          ...formData,
-          price: selectedTrain ? selectedTrain.price[formData.class] : 0,
-        });
-  
-      } catch (error) {
-        console.error('Error fetching train data:', error);
-      } finally {
-        setLoading(false);
+    if (!validateForm()) return;
+
+    setLoading(true);
+    try {
+      const response = await axios.get(
+        `https://${import.meta.env.VITE_BACKEND}/api/trains`, 
+        { params: { from: formData.from, to: formData.to, date: formData.date, class: formData.class } }
+      );
+
+      setAvailableTrains(response.data);
+
+      const selectedTrain = response.data.find(train => train.id === formData.train);
+      if (selectedTrain) {
+        setFormData((prev) => ({ ...prev, price: selectedTrain.price[formData.class] }));
       }
+    } catch (error) {
+      console.error('Error fetching trains:', error);
+    } finally {
+      setLoading(false);
     }
   };
-  
-  
 
   const handlePromoCode = () => {
     if (discountCodes[promoCode]) {
-      setFormData({ ...formData, discount: discountCodes[promoCode] });
+      setFormData((prev) => ({ ...prev, discount: discountCodes[promoCode] }));
       alert('Promo code applied!');
     } else {
       alert('Invalid promo code');
     }
   };
-  
 
   const calculateTotalPrice = () => {
     const basePrice = formData.price * formData.passengers;
     return basePrice - basePrice * formData.discount;
   };
-  const handlePayment = async (price) => {
+
+  const handlePayment = async () => {
+    const totalAmount = calculateTotalPrice();
+    
     try {
-      // Step 1: Create an order using the backend API
-      const { data } = await axios.post(`https://${import.meta.env.VITE_BACKEND}/create-order`, {
-        amount: price,
+      const { data } = await axios.post(`https://${import.meta.env.VITE_BACKEND}/api/trains/create-payment`, {
+        amount: totalAmount,
+        currency: 'INR',
       });
-  
+
       if (data.success) {
-        // Step 2: Use Razorpay SDK to initiate payment
         const options = {
-          key: import.meta.env.VITE_RAZORPAY_KEY_ID, // From .env
+          key: import.meta.env.VITE_RAZORPAY_KEY_ID,
           amount: data.order.amount,
           currency: data.order.currency,
-          name: "Flight Booking",
-          description: "Flight booking payment",
+          name: "Train Booking",
+          description: "Train Ticket Payment",
           order_id: data.order.id,
-          handler: async function (response) {
-            // Step 3: Verify the payment once done
-            const verification = await axios.post(
-              `https://${import.meta.env.VITE_BACKEND}/verify-payment`,
-              {
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_signature: response.razorpay_signature,
-              }
-            );
-            
+          handler: async (response) => {
+            const verification = await axios.post(`https://${import.meta.env.VITE_BACKEND}/api/trains/verify-payment`, {
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+            });
+
             if (verification.data.success) {
               alert("Payment Successful!");
-              // Proceed with booking confirmation or redirection
             } else {
               alert("Payment Verification Failed!");
             }
           },
           prefill: {
-            name: "User Name", // Add dynamic user name if available
-            email: "user@example.com", // Add dynamic email if available
+            name: "User Name",
+            email: "user@example.com",
           },
-          theme: {
-            color: "#528FF0",
-          },
+          theme: { color: "#528FF0" },
         };
+
         const razorpay = new window.Razorpay(options);
         razorpay.open();
       }

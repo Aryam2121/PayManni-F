@@ -37,21 +37,33 @@ const FlightBooking = () => {
 
   const handleSearch = async () => {
     if (!validateForm()) return;
-
+  
     setIsLoading(true);
     try {
-      const { data } = await axios.post(`https://${import.meta.env.VITE_BACKEND}/api/search`, formData);
-      setSearchResults(data.flights || []);
+      const { data } = await axios.post(`https://${import.meta.env.VITE_BACKEND}/api/flights/search`, formData);
+      
+      console.log("API Response:", data); // Debugging line
+  
+      if (Array.isArray(data.flights)) {
+        setSearchResults(data.flights);
+      } else {
+        console.error("Expected an array but got:", data.flights);
+        setSearchResults([]); // Fallback to an empty array
+      }
+      
       setShowResults(true);
     } catch (error) {
+      console.error("API Error:", error);
       alert("Failed to fetch flights. Please try again.");
     } finally {
       setIsLoading(false);
     }
   };
-
+  
   // Filters and sorting
   const filteredResults = useMemo(() => {
+    if (!Array.isArray(searchResults)) return []; // Prevents filter error
+  
     return searchResults.filter((flight) => {
       return (
         (!filters.airline || flight.airline === filters.airline) &&
@@ -59,6 +71,7 @@ const FlightBooking = () => {
       );
     });
   }, [searchResults, filters]);
+  
 
   const sortedResults = useMemo(() => {
     return [...filteredResults].sort((a, b) => {
@@ -80,7 +93,7 @@ const FlightBooking = () => {
   useEffect(() => {
     const fetchFlights = async () => {
       try {
-        const response = await axios.get(`https://${import.meta.env.VITE_BACKEND}/api/fetch`);
+        const response = await axios.get(`https://${import.meta.env.VITE_BACKEND}/api/flights/fetch`);
         setSearchResults(response.data);
       } catch (error) {
         console.error("Error fetching flights:", error);
@@ -92,7 +105,7 @@ const FlightBooking = () => {
   const handlePayment = async (price) => {
     try {
       // Step 1: Create an order using the backend API
-      const { data } = await axios.post(`https://${import.meta.env.VITE_BACKEND}/create-order`, {
+      const { data } = await axios.post(`https://${import.meta.env.VITE_BACKEND}/api/order`, {
         amount: price,
       });
   
@@ -108,7 +121,7 @@ const FlightBooking = () => {
           handler: async function (response) {
             // Step 3: Verify the payment once done
             const verification = await axios.post(
-              `https://${import.meta.env.VITE_BACKEND}/verify-payment`,
+              `https://${import.meta.env.VITE_BACKEND}/api/verify-payment`,
               {
                 razorpay_order_id: response.razorpay_order_id,
                 razorpay_payment_id: response.razorpay_payment_id,
