@@ -1,8 +1,8 @@
-import React, { useState } from "react";
+import React, { useState,useEffect } from "react";
 import { motion } from "framer-motion";
 import { FaCheckCircle, FaTimesCircle, FaSpinner } from "react-icons/fa"; // Icons for success, failure, and loading
 import { useLocalStorage } from "react-use"; // Custom hook for persistent storage (local storage)
-
+import axios from "axios"; // Axios for making API requests
 const BillPaymentPage = () => {
   const [selectedBill, setSelectedBill] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -32,30 +32,39 @@ const BillPaymentPage = () => {
     { id: 8, name: "Rent", icon: "🏠" },
     { id: 9, name: "Subscription", icon: "🎧" },
   ];
+  useEffect(() => {
+    axios.get(`https://${import.meta.env.VITE_BACKEND}/api/bills`)
+      .then((response) => {
+        setBillTypes(response.data.bills);
+        setBillAmounts(response.data.billAmounts);
+      })
+      .catch((error) => console.error("Error fetching bills:", error));
+  }, []);
 
-  const handlePayment = () => {
+  const handlePayment = async () => {
     setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-      setPaymentStatus("success");
-      // Save payment to history
-      setPaymentHistory([
-        ...paymentHistory,
-        {
-          bill: selectedBill.name,
-          amount: billAmounts[selectedBill.name.toLowerCase()],
-          date: new Date(),
-          status: "success",
-        },
-      ]);
-    }, 2000);
-  };
-
-  const handleAmountChange = (billName, amount) => {
-    setBillAmounts((prev) => ({
-      ...prev,
-      [billName]: amount,
-    }));
+    try {
+      const response = await axios.post(`https://${import.meta.env.VITE_BACKEND}/api/payments`, {
+        bill: selectedBill.name,
+        amount: billAmounts[selectedBill.name.toLowerCase()],
+        method: paymentMethod,
+      });
+      setPaymentStatus(response.data.success ? "success" : "failure");
+      if (response.data.success) {
+        setPaymentHistory([
+          ...paymentHistory,
+          {
+            bill: selectedBill.name,
+            amount: billAmounts[selectedBill.name.toLowerCase()],
+            date: new Date(),
+            status: "success",
+          },
+        ]);
+      }
+    } catch (error) {
+      setPaymentStatus("failure");
+    }
+    setIsLoading(false);
   };
 
   const PaymentForm = ({ bill }) => (

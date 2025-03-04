@@ -200,6 +200,7 @@ const Home = () => {
   
         {/* Feature Cards */}
 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-10">
+  
   {/* Card Example: Recharge */}
   <motion.div
     className={`flex flex-col items-center shadow-lg rounded-3xl p-6 hover:shadow-2xl transition-all duration-300 ease-in-out transform hover:scale-105 ${darkMode ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white" : "bg-gradient-to-r from-blue-400 to-blue-500 text-white"}`}

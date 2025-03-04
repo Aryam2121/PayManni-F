@@ -1,68 +1,80 @@
-import { motion } from 'framer-motion';
-import { Link } from 'react-router-dom';
+import { motion } from "framer-motion";
+import { Link } from "react-router-dom";
+import { Facebook, Twitter, Instagram, Sun, Moon } from "lucide-react";
+import { useState, useEffect } from "react";
 
 const Footer = () => {
+  const [darkMode, setDarkMode] = useState(
+    localStorage.getItem("theme") === "dark"
+  );
+
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add("dark");
+      localStorage.setItem("theme", "dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+      localStorage.setItem("theme", "light");
+    }
+  }, [darkMode]);
+
   return (
-    // Footer
     <motion.footer
-      className=" py-8 bg-gradient-to-r from-gray-700 to-indigo-600 text-white text-center shadow-xl"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ delay: 1, duration: 0.8 }}
+      className="py-10 bg-gradient-to-br from-gray-800 via-indigo-700 to-purple-600 dark:from-gray-900 dark:via-gray-800 dark:to-black text-white text-center shadow-2xl relative transition-all duration-300"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.5, duration: 0.8 }}
     >
-      <div className="max-w-screen-xl mx-auto px-4">
-        <p className="text-lg font-semibold">
+      <div className="max-w-4xl mx-auto px-6">
+        <p className="text-lg font-semibold tracking-wide">
           © 2024 <span className="font-bold text-yellow-400">PayManni</span>. All rights reserved.
         </p>
-        
+
         {/* Links Section */}
-        <div className="mt-4 flex justify-center space-x-6">
-          <Link
-            to="/privacy"
-            className="text-sm hover:text-blue-300 transition-all duration-300"
-          >
-            Privacy Policy
-          </Link>
-          <Link
-            to="/terms"
-            className="text-sm hover:text-blue-300 transition-all duration-300"
-          >
-            Terms of Service
-          </Link>
-          <Link
-            to="/support"
-            className="text-sm hover:text-blue-300 transition-all duration-300"
-          >
-            Need Help? Contact Support
-          </Link>
+        <div className="mt-5 flex justify-center space-x-6">
+          {["Privacy Policy", "Terms of Service", "Contact Support"].map(
+            (text, index) => (
+              <Link
+                key={index}
+                to={`/${text.toLowerCase().replace(/\s/g, "")}`}
+                className="text-sm font-medium transition-all duration-300 hover:text-blue-300 dark:hover:text-yellow-400 hover:scale-105"
+              >
+                {text}
+              </Link>
+            )
+          )}
         </div>
-        
-        {/* Social Icons Section */}
-        <div className="mt-6 flex justify-center space-x-4">
-          <motion.a
-            href="https://facebook.com"
-            className="text-2xl hover:text-blue-500"
-            whileHover={{ scale: 1.2 }}
-            whileTap={{ scale: 0.8 }}
+
+        {/* Social Icons */}
+        <div className="mt-6 flex justify-center space-x-5">
+          {[
+            { icon: Facebook, link: "https://facebook.com", color: "hover:text-blue-500 dark:hover:text-blue-300" },
+            { icon: Twitter, link: "https://twitter.com", color: "hover:text-blue-400 dark:hover:text-blue-300" },
+            { icon: Instagram, link: "https://instagram.com", color: "hover:text-pink-400 dark:hover:text-pink-300" },
+          ].map(({ icon: Icon, link, color }, index) => (
+            <motion.a
+              key={index}
+              href={link}
+              className={`text-2xl ${color} transition-all`}
+              whileHover={{ scale: 1.2, rotate: 5 }}
+              whileTap={{ scale: 0.9 }}
+            >
+              <Icon size={28} />
+            </motion.a>
+          ))}
+        </div>
+
+        {/* Dark Mode Toggle Button */}
+        <div className="mt-6">
+          <button
+            onClick={() => setDarkMode(!darkMode)}
+            className="flex items-center justify-center gap-2 px-4 py-2 rounded-full bg-gray-100 dark:bg-gray-800 dark:text-yellow-300 text-gray-800 shadow-md transition-all hover:scale-105"
           >
-            <i className="fab fa-facebook"></i>
-          </motion.a>
-          <motion.a
-            href="https://twitter.com"
-            className="text-2xl hover:text-blue-400"
-            whileHover={{ scale: 1.2 }}
-            whileTap={{ scale: 0.8 }}
-          >
-            <i className="fab fa-twitter"></i>
-          </motion.a>
-          <motion.a
-            href="https://instagram.com"
-            className="text-2xl hover:text-pink-400"
-            whileHover={{ scale: 1.2 }}
-            whileTap={{ scale: 0.8 }}
-          >
-            <i className="fab fa-instagram"></i>
-          </motion.a>
+            {darkMode ? <Sun size={20} /> : <Moon size={20} />}
+            <span className="text-sm font-medium">
+              {darkMode ? "Light Mode" : "Dark Mode"}
+            </span>
+          </button>
         </div>
       </div>
     </motion.footer>

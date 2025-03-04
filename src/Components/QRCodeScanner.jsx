@@ -1,10 +1,8 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-
 import QrReader from "react-qr-scanner";
 
-// New QR reader for file upload
 const QrScanner = () => {
   const [qrCodeData, setQrCodeData] = useState(null);
   const [amount, setAmount] = useState("");
@@ -15,21 +13,20 @@ const QrScanner = () => {
   const [showMpinPrompt, setShowMpinPrompt] = useState(false);
   const [enteredMpin, setEnteredMpin] = useState("");
   const [isMpinValid, setIsMpinValid] = useState(true);
-  const [qrFile, setQrFile] = useState(null);  // To handle the uploaded QR code file
-  const navigate = useNavigate();
+  const [qrFile, setQrFile] = useState(null);
 
-  const storedMpin = "1234"; // For simplicity, assuming the stored MPIN is "1234"
+  const navigate = useNavigate();
+  const storedMpin = "1234";
 
   const handleScan = (data) => {
     if (data) {
       setQrCodeData(data);
-      setError(""); // Clear any previous errors
-      setShowConfirmation(true); // Show confirmation when QR is scanned
+      setError("");
+      setShowConfirmation(true);
     }
   };
 
-  const handleError = (err) => {
-    console.error(err);
+  const handleError = () => {
     setError("Failed to scan the QR code. Please try again.");
   };
 
@@ -39,15 +36,15 @@ const QrScanner = () => {
 
   const handleMpinChange = (e) => {
     setEnteredMpin(e.target.value);
-    setIsMpinValid(true); // Reset validation status when user changes MPIN input
+    setIsMpinValid(true);
   };
 
   const handleSendMoney = () => {
     if (!qrCodeData || !amount || amount <= 0) {
-      setError("Please scan a valid QR code and enter a valid amount to send.");
+      setError("Please scan a valid QR code and enter a valid amount.");
       return;
     }
-    setShowMpinPrompt(true); // Show MPIN prompt after amount and recipient are confirmed
+    setShowMpinPrompt(true);
   };
 
   const validateMpin = () => {
@@ -55,16 +52,13 @@ const QrScanner = () => {
       setIsMpinValid(false);
       return;
     }
-    // Proceed with the transaction if MPIN is valid
     setIsLoading(true);
-    setShowMpinPrompt(false); // Hide MPIN prompt
-    
-    // Simulate payment processing
+    setShowMpinPrompt(false);
     setTimeout(() => {
       setPaymentSuccess(true);
       setIsLoading(false);
       alert(`Successfully sent ${amount} to ${qrCodeData}`);
-      navigate("/transactions"); // Use navigate instead of history.push
+      navigate("/transactions");
     }, 2000);
   };
 
@@ -72,163 +66,123 @@ const QrScanner = () => {
     const file = e.target.files[0];
     if (file) {
       setQrFile(file);
-      // You could implement file reading and scanning here, e.g., using a library like 'jsqr' for QR code processing
     }
-  };
-
-  const handleFileScan = (data) => {
-    if (data) {
-      setQrCodeData(data);
-      setError(""); // Clear any previous errors
-      setShowConfirmation(true); // Show confirmation when QR is scanned from file
-    }
-  };
-
-  const handleFileError = (err) => {
-    console.error(err);
-    setError("Failed to scan the QR code from file. Please try again.");
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-4">
-      <motion.h2 className="text-2xl font-bold mb-4">Send Money</motion.h2>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 p-6">
+      <motion.h2
+        className="text-3xl font-bold mb-6"
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+      >
+        Send Money
+      </motion.h2>
 
-      {/* QR Scanner (Camera) */}
-      <div className="w-full max-w-md mb-6">
-        <QrReader
-          delay={300}
-          style={{ width: "100%", height: "auto" }}
-          onError={handleError}
-          onScan={handleScan}
-        />
-      </div>
-
-      {/* File Upload for QR Code */}
-      <div className="w-full max-w-md mb-6">
-        <input
-          type="file"
-          accept="image/*"
-          onChange={handleFileUpload}
-          className="border border-gray-300 p-3 rounded-md w-full"
-        />
-        {qrFile && (
-          <QrReader
-            delay={300}
-            style={{ width: "100%", height: "auto" }}
-            onError={handleFileError}
-            onScan={handleFileScan}
-            onFileSelect={(file) => handleFileUpload({ target: { files: [file] } })}
-          />
-        )}
-      </div>
-
-      {/* Error Message */}
-      {error && (
-        <div className="bg-red-100 text-red-600 p-3 rounded-md mb-4 w-full max-w-md">
-          <p>{error}</p>
+      <div className="w-full max-w-md space-y-6">
+        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md">
+          <p className="text-gray-700 dark:text-gray-300 font-semibold mb-2">Scan QR Code</p>
+          <QrReader delay={300} style={{ width: "100%" }} onError={handleError} onScan={handleScan} />
         </div>
-      )}
 
-      {/* Display Scanned QR Data */}
-      {qrCodeData && (
-        <div className="bg-white p-4 rounded-lg shadow-lg w-full max-w-md mb-6">
-          <p className="text-lg font-semibold">Recipient ID: {qrCodeData}</p>
-        </div>
-      )}
-
-      {/* Amount Input */}
-      <div className="bg-white p-4 rounded-lg shadow-lg w-full max-w-md mb-6">
-        <label className="block text-lg font-medium mb-2">Amount to Send</label>
-        <input
-          type="number"
-          value={amount}
-          onChange={handleAmountChange}
-          className="w-full p-3 border border-gray-300 rounded-md mb-4"
-          placeholder="Enter amount"
-        />
-      </div>
-
-      {/* Confirmation Message */}
-      {showConfirmation && (
-        <div className="bg-yellow-100 p-4 rounded-lg shadow-lg w-full max-w-md mb-6">
-          <p className="text-lg font-semibold">
-            Are you sure you want to send {amount} to {qrCodeData}?
-          </p>
-          <div className="flex justify-between">
-            <button
-              onClick={handleSendMoney}
-              className="bg-green-500 text-white py-2 px-6 rounded-md font-semibold hover:bg-green-600 transition-colors"
-            >
-              Yes, Send
-            </button>
-            <button
-              onClick={() => setShowConfirmation(false)}
-              className="bg-red-500 text-white py-2 px-6 rounded-md font-semibold hover:bg-red-600 transition-colors"
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* MPIN Prompt */}
-      {showMpinPrompt && (
-        <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md mb-6">
-          <label className="block text-lg font-medium mb-2">Enter Your M-PIN</label>
+        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md">
+          <p className="text-gray-700 dark:text-gray-300 font-semibold mb-2">Upload QR Code</p>
           <input
-            type="password"
-            value={enteredMpin}
-            onChange={handleMpinChange}
-            className="w-full p-3 border border-gray-300 rounded-md mb-4"
-            placeholder="Enter 4-digit PIN"
-            maxLength="4"
+            type="file"
+            accept="image/*"
+            onChange={handleFileUpload}
+            className="w-full border border-gray-300 dark:border-gray-600 rounded-md p-2 text-gray-600 dark:text-gray-300 cursor-pointer"
           />
-          {!isMpinValid && (
-            <div className="text-red-600 text-sm mb-4">Incorrect M-PIN. Please try again.</div>
-          )}
-          <div className="flex justify-between">
-            <button
-              onClick={validateMpin}
-              className="bg-blue-500 text-white py-2 px-6 rounded-md font-semibold hover:bg-blue-600 transition-colors"
-            >
-              Validate
-            </button>
-            <button
-              onClick={() => setShowMpinPrompt(false)}
-              className="bg-red-500 text-white py-2 px-6 rounded-md font-semibold hover:bg-red-600 transition-colors"
-            >
-              Cancel
-            </button>
-          </div>
         </div>
-      )}
 
-      {/* Send Money Button (disabled if loading or missing amount) */}
-      <div className="w-full max-w-md">
+        {error && <div className="text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-800 p-3 rounded-md">{error}</div>}
+
+        {qrCodeData && (
+          <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md">
+            <p className="text-gray-800 dark:text-gray-300 font-medium">Recipient ID: {qrCodeData}</p>
+          </div>
+        )}
+
+        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md">
+          <label className="text-gray-700 dark:text-gray-300 font-semibold">Amount to Send</label>
+          <input
+            type="number"
+            value={amount}
+            onChange={handleAmountChange}
+            className="w-full border border-gray-300 dark:border-gray-600 rounded-md p-2 mt-2 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+            placeholder="Enter amount"
+          />
+        </div>
+
+        {showConfirmation && (
+          <div className="bg-yellow-100 dark:bg-yellow-800 p-4 rounded-lg shadow-md">
+            <p className="text-gray-800 dark:text-gray-100 font-medium mb-4">
+              Send ₹{amount} to {qrCodeData}?
+            </p>
+            <div className="flex justify-between">
+              <button
+                onClick={handleSendMoney}
+                className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 transition"
+              >
+                Yes, Send
+              </button>
+              <button
+                onClick={() => setShowConfirmation(false)}
+                className="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 transition"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+
+        {showMpinPrompt && (
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+            <label className="text-gray-700 dark:text-gray-300 font-semibold">Enter Your M-PIN</label>
+            <input
+              type="password"
+              value={enteredMpin}
+              onChange={handleMpinChange}
+              className="w-full border border-gray-300 dark:border-gray-600 rounded-md p-2 mt-2 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+              placeholder="Enter 4-digit PIN"
+              maxLength="4"
+            />
+            {!isMpinValid && <p className="text-red-600 dark:text-red-400 text-sm mt-2">Incorrect M-PIN. Try again.</p>}
+            <div className="flex justify-between mt-4">
+              <button
+                onClick={validateMpin}
+                className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition"
+              >
+                Validate
+              </button>
+              <button
+                onClick={() => setShowMpinPrompt(false)}
+                className="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 transition"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+
         <button
           onClick={handleSendMoney}
           disabled={isLoading || !amount || amount <= 0}
-          className={`${
-            isLoading ? "bg-gray-400" : "bg-blue-500"
-          } text-white py-2 px-6 rounded-md font-semibold hover:bg-blue-600 transition-colors w-full`}
+          className={`w-full py-3 rounded-md text-white font-semibold transition ${
+            isLoading ? "bg-gray-400 dark:bg-gray-600" : "bg-blue-500 hover:bg-blue-600"
+          }`}
         >
           {isLoading ? "Processing..." : "Send Money"}
         </button>
+
+        {isLoading && <p className="text-blue-500 dark:text-blue-400 font-medium text-center">Processing payment...</p>}
+
+        {paymentSuccess && (
+          <div className="bg-green-100 dark:bg-green-800 text-green-600 dark:text-green-300 p-3 rounded-md text-center">
+            Payment Successful!
+          </div>
+        )}
       </div>
-
-      {/* Loading Spinner */}
-      {isLoading && (
-        <div className="mt-4 text-blue-500 font-semibold">
-          <span>Processing payment...</span>
-        </div>
-      )}
-
-      {/* Payment Success Message */}
-      {paymentSuccess && (
-        <div className="mt-4 p-4 text-green-500 bg-green-100 rounded-lg">
-          <p>Payment Successful!</p>
-        </div>
-      )}
     </div>
   );
 };
