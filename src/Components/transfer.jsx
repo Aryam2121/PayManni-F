@@ -100,22 +100,34 @@ const MoneyTransferPage = () => {
   };
 
   return (
-    <div className="bg-gray-900 text-white p-6 w-full min-h-screen">
-      <h2 className="text-4xl font-semibold mb-8 text-center text-green-400">Money Transfer</h2>
+    <div className="bg-gray-900 text-white p-6 w-full min-h-screen flex flex-col items-center">
+      <motion.h2 
+        className="text-4xl font-semibold mb-6 text-green-400"
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        Money Transfer
+      </motion.h2>
 
-      <div className="max-w-md mx-auto bg-gray-800 p-6 rounded-lg shadow-xl space-y-6">
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
-          <h3 className="text-xl font-bold text-green-300">Balance: ${balance}</h3>
+      <div className="w-full max-w-lg bg-gray-800 p-6 rounded-lg shadow-xl space-y-6">
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5 }}
+          className="text-xl font-bold text-green-300 text-center"
+        >
+          Balance: ${balance}
         </motion.div>
 
-        {error && <p className="text-red-400">{error}</p>}
+        {error && <p className="text-red-400 text-center">{error}</p>}
 
         <div className="space-y-4">
           <input
             type="text"
             value={recipient}
             onChange={(e) => setRecipient(e.target.value)}
-            className="w-full p-4 bg-gray-700 border border-gray-600 rounded-md"
+            className="w-full p-4 bg-gray-700 border border-gray-600 rounded-md focus:ring-2 focus:ring-green-400"
             placeholder="Recipient's Name"
           />
 
@@ -123,14 +135,14 @@ const MoneyTransferPage = () => {
             type="number"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
-            className="w-full p-4 bg-gray-700 border border-gray-600 rounded-md"
+            className="w-full p-4 bg-gray-700 border border-gray-600 rounded-md focus:ring-2 focus:ring-green-400"
             placeholder="Amount"
           />
 
           <select
             value={paymentMethod}
             onChange={(e) => setPaymentMethod(e.target.value)}
-            className="w-full p-4 bg-gray-700 border border-gray-600 rounded-md"
+            className="w-full p-4 bg-gray-700 border border-gray-600 rounded-md focus:ring-2 focus:ring-green-400"
           >
             <option value="card">Credit/Debit Card</option>
             <option value="paypal">PayPal</option>
@@ -183,13 +195,17 @@ const MoneyTransferPage = () => {
             />
           )}
 
-          <button onClick={handleTransfer} className="w-full bg-green-600 text-white py-3 mt-4 rounded-md">
+          <motion.button 
+            onClick={handleTransfer}
+            className="w-full bg-green-600 text-white py-3 mt-4 rounded-md hover:bg-green-500 transition duration-300"
+            whileTap={{ scale: 0.95 }}
+          >
             {isLoading ? <FaSpinner className="animate-spin mx-auto" /> : "Transfer Money"}
-          </button>
+          </motion.button>
         </div>
 
-        {transferStatus === "success" && <p className="text-green-400 mt-4">Transfer Successful!</p>}
-        {transferStatus === "fail" && <p className="text-red-400 mt-4">Transfer Failed!</p>}
+        {transferStatus === "success" && <p className="text-green-400 mt-4 text-center">Transfer Successful!</p>}
+        {transferStatus === "fail" && <p className="text-red-400 mt-4 text-center">Transfer Failed!</p>}
       </div>
     </div>
   );
