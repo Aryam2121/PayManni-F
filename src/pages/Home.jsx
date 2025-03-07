@@ -362,6 +362,102 @@ const Home = () => {
     </Link>
   </motion.div>
         </div>
+        {/* Feature Cards */}
+{/* <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-10">
+  {[
+    {
+      icon: <FaWallet className="text-6xl text-white" />,
+      title: "Recharge",
+      description: "Add balance to your wallet.",
+      link: "/recharge",
+      bgClass: "bg-gradient-to-r from-blue-600 to-blue-500",
+      delay: 0.5,
+    },
+    {
+      icon: <FaRegMoneyBillAlt className="text-6xl text-white" />,
+      title: "Pay Bills",
+      description: "Pay your utility bills easily.",
+      link: "/pay-bills",
+      bgClass: "bg-gradient-to-r from-green-600 to-green-500",
+      delay: 0.7,
+    },
+    {
+      icon: <FaCreditCard className="text-6xl text-white" />,
+      title: "Transfer Money",
+      description: "Send money to anyone instantly.",
+      link: "/transfer",
+      bgClass: "bg-gradient-to-r from-purple-600 to-purple-500",
+      delay: 0.9,
+    },
+    {
+      icon: <FaUserCircle className="text-6xl text-white" />,
+      title: "Pay Contacts",
+      description: "Pay your contacts easily.",
+      link: "/payContacts",
+      bgClass: "bg-gradient-to-r from-green-600 to-green-500",
+      delay: 1.1,
+    },
+    {
+      icon: <FaBalanceScale className="text-6xl text-white" />,
+      title: "Balance & History",
+      description: "Check Balance & History.",
+      link: "/balanceHis",
+      bgClass: "bg-gradient-to-r from-purple-600 to-purple-500",
+      delay: 1.7,
+    },
+    {
+      icon: <FaPlane className="text-6xl text-white" />,
+      title: "Check Flights",
+      description: "Flight Booking",
+      link: "/flight-booking",
+      bgClass: "bg-gradient-to-r from-green-600 to-green-500",
+      delay: 0.5,
+    },
+    {
+      icon: <FaTrain className="text-6xl text-white" />,
+      title: "Train Booking",
+      description: "Check Trains",
+      link: "/train-booking",
+      bgClass: "bg-gradient-to-r from-purple-600 to-purple-500",
+      delay: 1.0,
+    },
+    {
+      icon: <FaBus className="text-6xl text-white" />,
+      title: "Bus Booking",
+      description: "Check Buses",
+      link: "/bus-booking",
+      bgClass: "bg-gradient-to-r from-green-600 to-green-500",
+      delay: 1.5,
+    },
+    {
+      icon: <FaQrcode className="text-6xl text-white" />,
+      title: "QR Payments",
+      description: "Pay quickly using QR codes.",
+      link: "/qr-scanner",
+      bgClass: "bg-gradient-to-r from-purple-600 to-purple-500",
+      delay: 1.3,
+    },
+  ].map((card, index) => (
+    <motion.div
+      key={index}
+      className={`flex flex-col items-center shadow-xl rounded-3xl p-6 hover:shadow-2xl transition-all duration-300 ease-in-out transform hover:scale-105 ${card.bgClass} text-white`}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ delay: card.delay, duration: 0.5 }}
+    >
+      {card.icon}
+      <h3 className="text-2xl font-semibold mt-4">{card.title}</h3>
+      <p className="text-gray-200 text-center">{card.description}</p>
+      <Link
+        to={card.link}
+        className="mt-4 bg-opacity-90 bg-black text-white py-3 px-6 rounded-full hover:bg-opacity-100 transition duration-200"
+      >
+        {card.title}
+      </Link>
+    </motion.div>
+  ))}
+</div> */}
+
           {/* Instant Loan Application */}
 <div
   className={`mt-8 p-6 rounded-xl shadow-xl transition-all duration-300 ${darkMode ? "bg-gray-800 text-white" : "bg-white text-gray-900"}`}
