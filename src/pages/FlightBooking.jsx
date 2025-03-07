@@ -155,7 +155,7 @@ const FlightBooking = () => {
   
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 p-6">
+    <div className="min-h-screen bg-gray-900 p-6">
       <div className="bg-white rounded-xl shadow-lg max-w-5xl w-full mx-auto p-8">
         <h1 className="text-4xl font-extrabold text-blue-700 text-center mb-8">Flight Booking</h1>
 
