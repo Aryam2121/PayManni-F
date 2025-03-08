@@ -143,15 +143,15 @@ const UserProfile = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-md p-6">
+    <div className="min-h-screen bg-gray-900 text-white py-8 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-4xl mx-auto bg-gray-800 rounded-lg shadow-md p-6">
         <h2 className="text-2xl font-semibold text-gray-800 mb-6 text-center">
           User Profile & Settings
         </h2>
 
         {/* Tab Navigation */}
         <Tab.Group>
-          <Tab.List className="flex space-x-2 border-b pb-2 mb-4">
+        <Tab.List className="flex space-x-2 border-b border-gray-700 pb-2 mb-4">
             {tabs.map((tab) => (
               <Tab
                 key={tab}
@@ -229,9 +229,9 @@ const UserProfile = () => {
               </div>
             ) : (
               <div className="ml-4">
-                <p className="font-medium">{profile.name}</p>
-                <p className="text-gray-500">{profile.phone}</p>
-                <p className="text-gray-500">{profile.email}</p>
+                 <p className="font-medium">{profile.name}</p>
+                <p className="text-gray-400">{profile.phone}</p>
+                <p className="text-gray-400">{profile.email}</p>
                 <button
                   onClick={() => setEditing(true)}
                   className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg shadow hover:bg-blue-600"
