@@ -6,7 +6,7 @@ import * as QRCode from "qrcode.react";
 
 const UserProfile = () => {
   const [profile, setProfile] = useState({
-    name: "John Doe",
+    name: "Aryaman Gupta",
     phone: "+1234567890",
     email: "john.doe@example.com",
     profilePicture: "",
@@ -67,19 +67,19 @@ const UserProfile = () => {
     <div>
       <h3 className="text-xl font-semibold mb-4">Dashboard Overview</h3>
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-        <div className="bg-indigo-100 p-4 rounded-lg shadow text-center">
+        <div className="bg-indigo-100 p-4 rounded-lg shadow text-center text-black">
           <p className="text-lg font-medium">Wallet Balance</p>
           <p className="text-xl font-bold">$500</p>
         </div>
-        <div className="bg-green-100 p-4 rounded-lg shadow text-center">
+        <div className="bg-green-100 p-4 rounded-lg shadow text-center text-black">
           <p className="text-lg font-medium">Rewards</p>
           <p className="text-xl font-bold">120 Points</p>
         </div>
-        <div className="bg-yellow-100 p-4 rounded-lg shadow text-center">
+        <div className="bg-yellow-100 p-4 rounded-lg shadow text-center text-black">
           <p className="text-lg font-medium">Pending Payments</p>
           <p className="text-xl font-bold">$50</p>
         </div>
-        <div className="bg-red-100 p-4 rounded-lg shadow text-center">
+        <div className="bg-red-100 p-4 rounded-lg shadow text-center text-black">
           <p className="text-lg font-medium">KYC Status</p>
           <p className="text-xl font-bold">{kycProgress}%</p>
         </div>
@@ -90,8 +90,8 @@ const UserProfile = () => {
   const renderUPIQRCode = () => (
     <div className="text-center">
       <h3 className="text-xl font-semibold mb-4">Your UPI QR Code</h3>
-      <QRCode value="upi://pay?pa=johndoe@upi&pn=John%20Doe&am=0&cu=INR" size={200} />
-      <p className="text-gray-500 mt-4">Scan to pay John Doe via UPI</p>
+      <QRCode value="upi://pay?pa=AryamanGupta@upi&pn=Aryaman%20Gupta&am=0&cu=INR" size={200} />
+      <p className="text-gray-500 mt-4">Scan to pay Aryaman Gupta via UPI</p>
     </div>
   );
 

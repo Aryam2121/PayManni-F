@@ -131,7 +131,8 @@ const TrainBooking = () => {
   };
   
   return (
-    <div className="max-w-5xl mx-auto p-6 bg-gray-50 rounded-lg shadow-md mt-8">
+    <div className="min-h-screen bg-gray-900 p-6">
+      <div className="max-w-5xl mx-auto p-6 bg-gray-200 rounded-lg shadow-md mt-8">
       <h2 className="text-3xl font-bold mb-6 text-center text-blue-700">Train Booking System</h2>
 
       <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -318,6 +319,7 @@ const TrainBooking = () => {
   </div>
 ) : null}
     </div>
+  </div>
   );
 };
 
