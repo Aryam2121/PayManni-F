@@ -86,6 +86,7 @@ import LoanApplication from "./pages/LoanApp";
 import BillPaymentReminder from "./pages/BillPaymentRem";
 import SigninPage from "./pages/Signin";
 import Movies from "./Components/Movies";
+import BookMovie from "./Components/BookMovie";
 // Protected Route Component
 const ProtectedRoute = ({ children }) => (
   <>
@@ -126,6 +127,7 @@ function App() {
 
           {/* Protected Routes */}
           <Route path="/movies" element={<ProtectedRoute><Movies /></ProtectedRoute>} />
+          <Route path="/movies/book/:movieId" element={<BookMovie />} />
           <Route path="/wallet" element={<ProtectedRoute><Wallet /></ProtectedRoute>} />
           <Route path="/recharge" element={<ProtectedRoute><Recharge /></ProtectedRoute>} />
           <Route path="/transactions" element={<ProtectedRoute><Transactions /></ProtectedRoute>} />
