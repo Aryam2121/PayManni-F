@@ -87,6 +87,11 @@ import BillPaymentReminder from "./pages/BillPaymentRem";
 import SigninPage from "./pages/Signin";
 import Movies from "./Components/Movies";
 import BookMovie from "./Components/BookMovie";
+import LocationServices from "./Components/LocationServices";
+import MerchantDashboard from "./Components/MerchantDashboard";
+import CustomerInvoice from "./Components/CustomerInvoice";
+import BusinessProfile from "./Components/BusinessProfile";
+import CustomerSupport from "./Components/CustomerSupport";
 // Protected Route Component
 const ProtectedRoute = ({ children }) => (
   <>
@@ -128,6 +133,11 @@ function App() {
           {/* Protected Routes */}
           <Route path="/movies" element={<ProtectedRoute><Movies /></ProtectedRoute>} />
           <Route path="/movies/book/:movieId" element={<BookMovie />} />
+          <Route path="/customer-support" element={<ProtectedRoute><CustomerSupport /></ProtectedRoute>} />
+          <Route path="/merchant-dashboard" element={<ProtectedRoute><MerchantDashboard /></ProtectedRoute>} />
+          <Route path="/customer-invoice" element={<ProtectedRoute><CustomerInvoice /></ProtectedRoute>} />
+          <Route path="/business-profile" element={<ProtectedRoute><BusinessProfile /></ProtectedRoute>} />
+          <Route path="/location-services" element={<ProtectedRoute><LocationServices /></ProtectedRoute>} />
           <Route path="/wallet" element={<ProtectedRoute><Wallet /></ProtectedRoute>} />
           <Route path="/recharge" element={<ProtectedRoute><Recharge /></ProtectedRoute>} />
           <Route path="/transactions" element={<ProtectedRoute><Transactions /></ProtectedRoute>} />
