@@ -32,23 +32,25 @@ export default function BookMovie() {
       alert("Please select at least one seat.");
       return;
     }
-
-    const bookingData = {
-      movieId,
-      userId,
-      seatsBooked: selectedSeats.length,
-      totalPrice: movie.price * selectedSeats.length,
-    };
-
+  
+    const totalAmount = movie.price * selectedSeats.length;
+  
     try {
       setLoading(true);
-      window.location.href = "https://razorpay.me/@pay-man";
-      await axios.post(`https://${import.meta.env.VITE_BACKEND}/api/movies/book`, bookingData);
-      alert("🎉 Booking successful!");
-
-      // Redirect to Razorpay for payment
+  
+      // Ask backend to create Razorpay payment link
+      const { data } = await axios.post(`https://${import.meta.env.VITE_BACKEND}/api/payment/create-link`, {
+        amount: totalAmount,
+        movieId,
+        userId,
+        selectedSeats,
+      });
+  
+      // Redirect to Razorpay payment page
+      window.location.href = data.short_url;
+  
     } catch (err) {
-      alert("Booking failed: " + err.response?.data?.message || err.message);
+      alert("Failed to initiate payment: " + err.message);
     } finally {
       setLoading(false);
     }
