@@ -92,6 +92,8 @@ import MerchantDashboard from "./Components/MerchantDashboard";
 import CustomerInvoice from "./Components/CustomerInvoice";
 import BusinessProfile from "./Components/BusinessProfile";
 import CustomerSupport from "./Components/CustomerSupport";
+import PrivacyPolicy from "./Components/PrivacyPolicy";
+import TermsAndConditions from "./Components/TermsAndConditions";
 // Protected Route Component
 const ProtectedRoute = ({ children }) => (
   <>
@@ -134,6 +136,8 @@ function App() {
           <Route path="/movies" element={<ProtectedRoute><Movies /></ProtectedRoute>} />
           <Route path="/movies/book/:movieId" element={<BookMovie />} />
           <Route path="/customer-support" element={<ProtectedRoute><CustomerSupport /></ProtectedRoute>} />
+          <Route path="/terms-and-conditions" element={<ProtectedRoute><TermsAndConditions /></ProtectedRoute>} />
+          <Route path="/privacy-policy" element={<ProtectedRoute><PrivacyPolicy /></ProtectedRoute>} />
           <Route path="/merchant-dashboard" element={<ProtectedRoute><MerchantDashboard /></ProtectedRoute>} />
           <Route path="/customer-invoice" element={<ProtectedRoute><CustomerInvoice /></ProtectedRoute>} />
           <Route path="/business-profile" element={<ProtectedRoute><BusinessProfile /></ProtectedRoute>} />

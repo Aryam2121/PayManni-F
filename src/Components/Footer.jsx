@@ -27,23 +27,31 @@ const Footer = () => {
     >
       <div className="max-w-4xl mx-auto px-6">
         <p className="text-lg font-semibold tracking-wide">
-          © 2024 <span className="font-bold text-yellow-400">PayManni</span>. All rights reserved.
+          © 2025 <span className="font-bold text-yellow-400">PayManni</span>. All rights reserved.
         </p>
 
         {/* Links Section */}
         <div className="mt-5 flex justify-center space-x-6">
-          {["Privacy Policy", "Terms of Service", "Contact Support"].map(
-            (text, index) => (
-              <Link
-                key={index}
-                to={`/${text.toLowerCase().replace(/\s/g, "")}`}
-                className="text-sm font-medium transition-all duration-300 hover:text-blue-300 dark:hover:text-yellow-400 hover:scale-105"
-              >
-                {text}
-              </Link>
-            )
-          )}
-        </div>
+  <Link
+    to="/privacy-policy"
+    className="text-sm font-medium transition-all duration-300 hover:text-blue-300 dark:hover:text-yellow-400 hover:scale-105"
+  >
+    Privacy Policy
+  </Link>
+  <Link
+    to="/terms-and-conditions"
+    className="text-sm font-medium transition-all duration-300 hover:text-blue-300 dark:hover:text-yellow-400 hover:scale-105"
+  >
+    Terms of Service
+  </Link>
+  <Link
+    to="/customer-support"
+    className="text-sm font-medium transition-all duration-300 hover:text-blue-300 dark:hover:text-yellow-400 hover:scale-105"
+  >
+    Contact Support
+  </Link>
+</div>
+
 
         {/* Social Icons */}
         <div className="mt-6 flex justify-center space-x-5">
