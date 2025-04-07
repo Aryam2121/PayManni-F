@@ -94,6 +94,7 @@ import BusinessProfile from "./Components/BusinessProfile";
 import CustomerSupport from "./Components/CustomerSupport";
 import PrivacyPolicy from "./Components/PrivacyPolicy";
 import TermsAndConditions from "./Components/TermsAndConditions";
+import PaymentSuccess from "./Components/PaymentSuccess";
 // Protected Route Component
 const ProtectedRoute = ({ children }) => (
   <>
@@ -135,6 +136,7 @@ function App() {
           {/* Protected Routes */}
           <Route path="/movies" element={<ProtectedRoute><Movies /></ProtectedRoute>} />
           <Route path="/movies/book/:movieId" element={<BookMovie />} />
+          <Route path="/payment-success" element={<PaymentSuccess />} />
           <Route path="/customer-support" element={<ProtectedRoute><CustomerSupport /></ProtectedRoute>} />
           <Route path="/terms-and-conditions" element={<ProtectedRoute><TermsAndConditions /></ProtectedRoute>} />
           <Route path="/privacy-policy" element={<ProtectedRoute><PrivacyPolicy /></ProtectedRoute>} />
