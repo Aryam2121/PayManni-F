@@ -74,7 +74,7 @@ const Footer = () => {
 
         {/* Dark Mode Toggle Button */}
         <div className="mt-6">
-          <button
+          {/* <button
             onClick={() => setDarkMode(!darkMode)}
             className="flex items-center justify-center gap-2 px-4 py-2 rounded-full bg-gray-100 dark:bg-gray-800 dark:text-yellow-300 text-gray-800 shadow-md transition-all hover:scale-105"
           >
@@ -82,7 +82,7 @@ const Footer = () => {
             <span className="text-sm font-medium">
               {darkMode ? "Light Mode" : "Dark Mode"}
             </span>
-          </button>
+          </button> */}
         </div>
       </div>
     </motion.footer>

@@ -23,43 +23,43 @@ const SendMoney = () => {
   };
 
   return (
-    <div className="bg-white/70 backdrop-blur-lg border border-gray-200 shadow-xl rounded-2xl p-6 w-full max-w-md mx-auto hover:shadow-2xl transition-all duration-300">
+    <div className="bg-gray-900 backdrop-blur-lg shadow-xl  p-6 w-full  hover:shadow-2xl transition-all duration-300 min-h-screen">
       <div className="flex items-center gap-2 mb-5">
         <ArrowRightLeft className="text-green-600" />
-        <h2 className="text-2xl font-bold text-gray-800">Send UPI Money</h2>
+        <h2 className="text-2xl font-bold text-white">Send UPI Money</h2>
       </div>
 
       <form onSubmit={handleSend} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700">From UPI ID</label>
+          <label className="block text-sm font-medium text-white">From UPI ID</label>
           <input
             type="text"
             placeholder="e.g. Aryaman@paymanni"
             value={fromUpi}
             onChange={(e) => setFromUpi(e.target.value)}
-            className="w-full px-4 py-2 rounded-lg border focus:ring-2 focus:ring-green-500 focus:outline-none"
+            className="w-full px-4 py-2 rounded-lg border focus:ring-2 focus:ring-green-500 focus:outline-none bg-gray-800 text-white"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700">To UPI ID</label>
+          <label className="block text-sm font-medium text-white">To UPI ID</label>
           <input
             type="text"
             placeholder="e.g. Aryaman21@paymanni"
             value={toUpi}
             onChange={(e) => setToUpi(e.target.value)}
-            className="w-full px-4 py-2 rounded-lg border focus:ring-2 focus:ring-green-500 focus:outline-none"
+            className="w-full px-4 py-2 rounded-lg border focus:ring-2 focus:ring-green-500 focus:outline-none bg-gray-800 text-white"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700">Amount (₹)</label>
+          <label className="block text-sm font-medium text-white">Amount (₹)</label>
           <input
             type="number"
             placeholder="Enter amount"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
-            className="w-full px-4 py-2 rounded-lg border focus:ring-2 focus:ring-green-500 focus:outline-none"
+            className="w-full px-4 py-2 rounded-lg border focus:ring-2 focus:ring-green-500 focus:outline-none bg-gray-800 text-white"
           />
         </div>
 

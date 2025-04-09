@@ -132,7 +132,7 @@ function App() {
                   <SigninPage />
                 </SignedOut>
                 <SignedIn>
-                  <Navigate to="/home" replace />
+                  <Navigate to="https://pay-manni.vercel.app/home" replace />
                 </SignedIn>
               </>
             }
