@@ -8,7 +8,7 @@ const SigninPage = () => {
 
   useEffect(() => {
     if (isSignedIn) {
-      navigate("/home"); // Redirect to home if user is already signed in
+      navigate("https://pay-manni.vercel.app/home"); // Redirect to home if user is already signed in
     } else {
       setTimeout(() => {
         window.location.href = "https://profound-scorpion-72.accounts.dev/sign-in";
