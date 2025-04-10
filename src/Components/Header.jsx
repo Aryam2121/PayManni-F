@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import PayManni from "../assets/PayManni.png";
 import { FaSearch, FaBell, FaChevronDown, FaBars, FaTimes, FaSun, FaMoon } from "react-icons/fa";
 import panda from "../assets/panda.jpg";
-import { useClerk } from "@clerk/clerk-react";
+import { useAuth } from "../context/AuthContext"; // Assuming you have an AuthContext for authentication
 import { useNavigate } from "react-router-dom";
 
 const Header = () => {
@@ -11,7 +11,7 @@ const Header = () => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem("darkMode") === "true");
 
-  const { signOut } = useClerk();
+  const { logout } = useAuth(); // Assuming you have a signOut function from your auth context or library
   const navigate = useNavigate();
 
   // Toggle Functions
@@ -24,8 +24,15 @@ const Header = () => {
   };
 
   const handleLogout = async () => {
-    await signOut();
-    navigate("/sign-in");
+    // Clear any stored tokens
+    localStorage.removeItem("authToken");
+    sessionStorage.removeItem("authToken"); // if you're using this
+  
+    // Call logout from AuthContext to clear state
+    logout();
+  
+    // Navigate to login page
+    navigate("/login-user");
   };
 
   useEffect(() => {

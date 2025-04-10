@@ -61,9 +61,8 @@
 // export default App;
 import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
-import { SignedIn, SignedOut, SignIn, SignUp } from "@clerk/clerk-react";
 
-// Import Components & Pages
+// Components & Pages
 import Header from "./Components/Header";
 import Footer from "./Components/Footer";
 import Home from "./pages/Home";
@@ -100,15 +99,22 @@ import GenerateUpi from "./Components/GenerateUpi";
 import ReceiveMoney from "./Components/ReceiveMoney";
 import SendMoney from "./Components/SendMoney";
 import RegisterUser from "./Components/RegisterUser";
-// Protected Route Component
-const ProtectedRoute = ({ children }) => (
-  <>
-    <SignedIn>{children}</SignedIn>
-    <SignedOut>
-      <Navigate to="/sign-in" replace />
-    </SignedOut>
-  </>
-);
+import BankServices from "./Components/BankServices";
+import LoginUser from "./Components/LoginUser";
+import NotFound from "./pages/Notfound"; // Create this page
+
+// Auth check
+const isAuthenticated = () => !!localStorage.getItem("token");
+
+// Protected Route Wrapper
+const ProtectedRoute = ({ children }) => {
+  return isAuthenticated() ? children : <Navigate to="/login-user" replace />;
+};
+
+// Optional: Cleaner alternative usage
+const Protected = ({ Component }) => {
+  return isAuthenticated() ? <Component /> : <Navigate to="/login-user" replace />;
+};
 
 function App() {
   return (
@@ -116,38 +122,33 @@ function App() {
       <Header />
       <main className="flex-grow pt-12">
         <Routes>
-          {/* Public Routes */}
-          <Route path="/home" element={<Home />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/signup" element={<SignupPage />} />
-          <Route path="/sign-in" element={<SignIn />} />
-          <Route path="/sign-up" element={<SignUp />} />
 
-          {/* Default Route: Redirect Based on Auth */}
+          {/* Default Route Based on Auth */}
           <Route
             path="/"
             element={
-              <>
-                <SignedOut>
-                  <SigninPage />
-                </SignedOut>
-                <SignedIn>
-                  <Navigate to="https://pay-manni.vercel.app/home" replace />
-                </SignedIn>
-              </>
+              isAuthenticated() ? (
+                <Navigate to="/home" replace />
+              ) : (
+                <Navigate to="/login-user" replace />
+              )
             }
           />
 
-          {/* Protected Routes */}
-          <Route path="/movies" element={<ProtectedRoute><Movies /></ProtectedRoute>} />
-          <Route path="/movies/book/:movieId" element={<BookMovie />} />
+          {/* Unprotected Routes */}
+          <Route path="/login-user" element={<LoginUser />} />
+          <Route path="/register-user" element={<RegisterUser />} />
           <Route path="/payment-success" element={<PaymentSuccess />} />
-          <Route path="/send-Money" element={<SendMoney/>}/>
-          <Route path="/recieve-money" element={<ReceiveMoney/>}/>
-          <Route path= "/generate-upi" element={<GenerateUpi/>}/>
-          <Route path="/register-user" element={<RegisterUser/>}/>
-
           <Route path="/thank-you" element={<ThankYou />} />
+          <Route path="/movies/book/:movieId" element={<BookMovie />} />
+
+          {/* Protected Routes */}
+          <Route path="/home" element={<ProtectedRoute><Home /></ProtectedRoute>} />
+          <Route path="/movies" element={<ProtectedRoute><Movies /></ProtectedRoute>} />
+          <Route path="/send-money" element={<ProtectedRoute><SendMoney /></ProtectedRoute>} />
+          <Route path="/receive-money" element={<ProtectedRoute><ReceiveMoney /></ProtectedRoute>} />
+          <Route path="/generate-upi" element={<ProtectedRoute><GenerateUpi /></ProtectedRoute>} />
+          <Route path="/bank-services" element={<ProtectedRoute><BankServices /></ProtectedRoute>} />
           <Route path="/customer-support" element={<ProtectedRoute><CustomerSupport /></ProtectedRoute>} />
           <Route path="/terms-and-conditions" element={<ProtectedRoute><TermsAndConditions /></ProtectedRoute>} />
           <Route path="/privacy-policy" element={<ProtectedRoute><PrivacyPolicy /></ProtectedRoute>} />
@@ -163,16 +164,17 @@ function App() {
           <Route path="/flight-booking" element={<ProtectedRoute><FlightBooking /></ProtectedRoute>} />
           <Route path="/train-booking" element={<ProtectedRoute><TrainBooking /></ProtectedRoute>} />
           <Route path="/bus-booking" element={<ProtectedRoute><BusBooking /></ProtectedRoute>} />
-          <Route path="/balanceHis" element={<ProtectedRoute><BalanceHistory /></ProtectedRoute>} />
+          <Route path="/balance-history" element={<ProtectedRoute><BalanceHistory /></ProtectedRoute>} />
           <Route path="/split-payment" element={<ProtectedRoute><GroupPaymentSplitting /></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
-          <Route path="/payContacts" element={<ProtectedRoute><PaymentContacts /></ProtectedRoute>} />
+          <Route path="/pay-contacts" element={<ProtectedRoute><PaymentContacts /></ProtectedRoute>} />
           <Route path="/qr-scanner" element={<ProtectedRoute><QrScanner /></ProtectedRoute>} />
           <Route path="/transfer" element={<ProtectedRoute><MoneyTransferPage /></ProtectedRoute>} />
           <Route path="/pay-bills" element={<ProtectedRoute><BillPaymentPage /></ProtectedRoute>} />
 
-          {/* Redirect Unknown Routes to Home */}
-          <Route path="*" element={<Navigate to="/" />} />
+          {/* 404 Not Found */}
+          <Route path="*" element={<NotFound />} />
+
         </Routes>
       </main>
       <Footer />
@@ -181,6 +183,7 @@ function App() {
 }
 
 export default App;
+
 
 // import React from "react";
 // import { Routes, Route, Navigate } from "react-router-dom";

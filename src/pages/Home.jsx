@@ -265,7 +265,7 @@ const Home = () => {
     <h3 className="text-2xl font-bold mt-4">Pay Contacts</h3>
     <p className="text-gray-200">Pay your Contacts easily.</p>
     <Link
-      to="/payContacts"
+      to="/pay-contacts"
       className="mt-4 bg-green-700 text-white py-3 px-6 rounded-full hover:bg-green-800 transition duration-200"
     >
       Go to Contacts
@@ -283,7 +283,7 @@ const Home = () => {
             <h3 className="text-2xl font-bold mt-4">Balance&History</h3>
             <p className="text-gray-200">Check Balance&History.</p>
             <Link
-              to="/balanceHis"
+              to="/balance-history"
               className="mt-4 bg-purple-700 text-white py-3 px-6 rounded-full hover:bg-green-800 transition duration-200"
             >
               Balance&History

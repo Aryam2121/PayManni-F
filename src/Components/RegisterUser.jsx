@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { Mail, Lock, User } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const RegisterUser = () => {
   const [formData, setFormData] = useState({
@@ -10,6 +11,7 @@ const RegisterUser = () => {
   });
   const [responseMsg, setResponseMsg] = useState("");
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -18,9 +20,19 @@ const RegisterUser = () => {
   const handleRegister = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setResponseMsg("");
     try {
-      const res = await axios.post(`https://${import.meta.env.VITE_BACKEND}/api/register`, formData);
+      const res = await axios.post(
+        `https://${import.meta.env.VITE_BACKEND}/api/register`,
+        formData
+      );
       setResponseMsg(res.data.msg);
+
+      if (res.data.msg.includes("successfully")) {
+        setTimeout(() => {
+          navigate("/login-user");
+        }, 1000);
+      }
     } catch (err) {
       setResponseMsg(err.response?.data?.msg || "Error occurred");
     }
@@ -28,9 +40,9 @@ const RegisterUser = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center px-4">
-      <div className="w-full max-w-md bg-white p-8 rounded-2xl shadow-xl">
-        <h2 className="text-3xl font-extrabold text-center text-indigo-600 mb-6">
+    <div className="min-h-screen bg-gradient-to-br from-zinc-900 to-gray-900 text-white flex items-center justify-center px-4">
+      <div className="w-full max-w-md bg-zinc-800 p-8 rounded-2xl shadow-2xl border border-zinc-700">
+        <h2 className="text-3xl font-bold text-center text-indigo-400 mb-6">
           Create Account
         </h2>
         <form onSubmit={handleRegister} className="space-y-5">
@@ -43,7 +55,7 @@ const RegisterUser = () => {
               placeholder="Full Name"
               value={formData.name}
               onChange={handleChange}
-              className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
+              className="w-full pl-10 pr-4 py-2 rounded-lg border border-zinc-600 bg-zinc-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
               required
             />
           </div>
@@ -57,7 +69,7 @@ const RegisterUser = () => {
               placeholder="Email Address"
               value={formData.email}
               onChange={handleChange}
-              className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
+              className="w-full pl-10 pr-4 py-2 rounded-lg border border-zinc-600 bg-zinc-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
               required
             />
           </div>
@@ -71,7 +83,7 @@ const RegisterUser = () => {
               placeholder="Password"
               value={formData.password}
               onChange={handleChange}
-              className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
+              className="w-full pl-10 pr-4 py-2 rounded-lg border border-zinc-600 bg-zinc-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
               required
             />
           </div>
@@ -80,7 +92,7 @@ const RegisterUser = () => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 rounded-lg shadow-md transition"
+            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 rounded-lg shadow-lg transition"
           >
             {loading ? "Registering..." : "Register"}
           </button>
@@ -88,15 +100,24 @@ const RegisterUser = () => {
 
         {/* Response Message */}
         {responseMsg && (
-          <p className="text-center mt-4 text-sm text-green-600 font-medium animate-pulse">
+          <p
+            className={`text-center mt-4 text-sm font-medium animate-pulse ${
+              responseMsg.includes("successfully")
+                ? "text-green-400"
+                : "text-red-400"
+            }`}
+          >
             {responseMsg}
           </p>
         )}
 
-        {/* Optional footer */}
-        <p className="text-sm text-center text-gray-500 mt-6">
+        {/* Footer */}
+        <p className="text-sm text-center text-gray-400 mt-6">
           Already have an account?{" "}
-          <span className="text-indigo-600 hover:underline cursor-pointer">
+          <span
+            className="text-indigo-400 hover:underline cursor-pointer"
+            onClick={() => navigate("/login-user")}
+          >
             Login
           </span>
         </p>
