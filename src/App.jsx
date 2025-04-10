@@ -83,7 +83,7 @@ import TrainBooking from "./pages/TrainBooking";
 import FlightBooking from "./pages/FlightBooking";
 import LoanApplication from "./pages/LoanApp";
 import BillPaymentReminder from "./pages/BillPaymentRem";
-import SigninPage from "./pages/Signin";
+
 import Movies from "./Components/Movies";
 import BookMovie from "./Components/BookMovie";
 import LocationServices from "./Components/LocationServices";
@@ -104,7 +104,7 @@ import LoginUser from "./Components/LoginUser";
 import NotFound from "./pages/Notfound"; // Create this page
 
 // Auth check
-const isAuthenticated = () => !!localStorage.getItem("token");
+const isAuthenticated = () => !!localStorage.getItem("paymanni_user");
 
 // Protected Route Wrapper
 const ProtectedRoute = ({ children }) => {

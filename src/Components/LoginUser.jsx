@@ -22,18 +22,20 @@ const LoginUser = () => {
         `https://${import.meta.env.VITE_BACKEND}/api/login`,
         formData
       );
-
+  
       setResponseMsg(res.data.msg);
+      localStorage.setItem("token", res.data.token); // ✅ Save token
       localStorage.setItem("paymanni_user", JSON.stringify(res.data.user));
+  
       setTimeout(() => {
-        navigate("/home");
+        navigate("/home"); // ✅ Redirect to home
       }, 1000);
     } catch (err) {
       setResponseMsg(err.response?.data?.msg || "Login failed");
     }
     setLoading(false);
   };
-
+  
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black flex items-center justify-center px-4">
       <div className="w-full max-w-md bg-white/10 backdrop-blur-md p-8 rounded-2xl shadow-2xl border border-gray-700">
