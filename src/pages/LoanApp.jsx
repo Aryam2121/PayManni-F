@@ -108,13 +108,13 @@ const LoanApplication = () => {
     }
   };
 
-  const handleRepayEMI = async (loanId) => {
+  const handleRepayEMI = async (loanId, amount) => {
     setLoading(true);
     try {
       const response = await fetch(`https://${import.meta.env.VITE_BACKEND}/api/loans/payment/order`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ loanId }),
+        body: JSON.stringify({ loanId, amount }),
       });
 
       const data = await response.json();
@@ -160,7 +160,7 @@ const LoanApplication = () => {
     setLoading(false);
   };
   return (
-    <div className="p-6 rounded-lg shadow-2xl bg-gray-900 text-white transition-all" aria-live="polite">
+    <div className="p-6  shadow-2xl bg-gray-900 text-white transition-all" aria-live="polite">
       <motion.div className="flex justify-between mb-4 items-center">
         <h2 className="text-3xl font-semibold">Apply for Instant Loan</h2>
         <input

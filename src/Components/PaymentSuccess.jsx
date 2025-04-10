@@ -22,7 +22,6 @@ export default function PaymentSuccess() {
           totalPrice,
         });
 
-        alert("🎉 Booking successful after payment!");
         navigate("/thank-you");
       } catch (err) {
         alert("Payment done but booking failed. Contact support.");

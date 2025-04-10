@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { FaPlane, FaTrain, FaBus,FaWallet, FaCreditCard, FaRegMoneyBillAlt, FaHistory, FaGift, FaQrcode, FaHeadset, FaDollarSign, FaRegBell, FaUserCircle, FaBalanceScale } from "react-icons/fa";
+import { FaPlane, FaTrain, FaBus,FaWallet, FaCreditCard, FaRegMoneyBillAlt, FaHistory, FaGift, FaQrcode, FaHeadset, FaDollarSign, FaRegBell, FaUserCircle, FaBalanceScale, FaVimeoV, FaFilm } from "react-icons/fa";
 import { motion } from "framer-motion";  
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useNavigate } from "react-router-dom";
 import boy from "../assets/boy.png"
+import { MdMovie } from "react-icons/md";
+
 const Home = () => {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
@@ -361,6 +363,23 @@ const Home = () => {
       Scan & Pay
     </Link>
   </motion.div>
+  {/* Card 6: Movies Booking */}
+<motion.div
+      className={`flex flex-col items-center shadow-lg rounded-3xl p-6 hover:shadow-2xl transition duration-300 ease-in-out transform hover:scale-105 ${darkMode ? "bg-gradient-to-r from-green-600 to-green-500 text-white" : "bg-gradient-to-r from-green-400 to-green-500 text-white"}`}
+  initial={{ opacity: 0 }}
+  animate={{ opacity: 1 }}
+  transition={{ delay: 1.5, duration: 0.5 }}
+>
+  <MdMovie className="text-5xl text-white" />
+  <h3 className="text-2xl font-bold mt-4">Book Movies</h3>
+  <p className="text-gray-200">Movies</p>
+  <Link
+    to="/movies"
+    className="mt-4 bg-green-600 text-white py-2 px-4 rounded-full hover:bg-green-700 transition duration-200"
+  >
+    Movies Booking
+  </Link>
+</motion.div>
         </div>
         {/* Feature Cards */}
 {/* <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-10">
@@ -487,11 +506,15 @@ const Home = () => {
       </div>
     </div>
     <button
-      onClick={handleLoanApplication}
-      className="w-full px-6 py-3 bg-purple-500 text-white rounded-lg shadow-md hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-yellow-400 transition-all duration-300"
-    >
-      Apply for Loan
-    </button>
+  onClick={() => {
+    handleLoanApplication();      // First call your loan logic
+    navigate("/loan-application"); // Then navigate to the loan page
+  }}
+  className="w-full px-6 py-3 bg-purple-500 text-white rounded-lg shadow-md hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-yellow-400 transition-all duration-300"
+>
+  Apply for Loan
+</button>
+
   </div>
   <div className="mt-4 flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
     <span>Need assistance? </span>
