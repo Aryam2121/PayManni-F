@@ -102,7 +102,7 @@ import RegisterUser from "./Components/RegisterUser";
 import BankServices from "./Components/BankServices";
 import LoginUser from "./Components/LoginUser";
 import NotFound from "./pages/Notfound"; // Create this page
-
+import EnhancedSettingsPage from "./Components/Settings";
 // Auth check
 const isAuthenticated = () => !!localStorage.getItem("paymanni_user");
 
@@ -143,6 +143,7 @@ function App() {
           <Route path="/movies/book/:movieId" element={<BookMovie />} />
 
           {/* Protected Routes */}
+          <Route path="/settings" element={<ProtectedRoute><EnhancedSettingsPage/></ProtectedRoute>}/>
           <Route path="/home" element={<ProtectedRoute><Home /></ProtectedRoute>} />
           <Route path="/movies" element={<ProtectedRoute><Movies /></ProtectedRoute>} />
           <Route path="/send-money" element={<ProtectedRoute><SendMoney /></ProtectedRoute>} />

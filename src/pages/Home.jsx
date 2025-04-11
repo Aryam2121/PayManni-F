@@ -7,37 +7,50 @@ import "react-toastify/dist/ReactToastify.css";
 import { useNavigate } from "react-router-dom";
 import boy from "../assets/boy.png"
 import { MdMovie } from "react-icons/md";
+import { useAuth } from "../context/AuthContext";
+import axios from "axios";
 
 const Home = () => {
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState(null);
+  const { user } = useAuth();
   const [transactions, setTransactions] = useState([]);
   const [darkMode, setDarkMode] = useState(true);
   const [chatOpen, setChatOpen] = useState(false);
   const [offers, setOffers] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [loanAmount, setLoanAmount] = useState(0);
-  const navigate = useNavigate();
-  useEffect(() => {
-    setTimeout(() => {
-      setUser({ name: "Aryaman Gupta", balance: 1200, profilePic: boy });
+  const [accountDetails, setAccountDetails] = useState(null);
 
-      setTransactions([
-        { type: 'Recharge', amount: 500, date: '2024-12-01' },
-        { type: 'Pay Bills', amount: 300, date: '2024-12-05' },
-        { type: 'Money Transfer', amount: 150, date: '2024-12-10' },
-      ]);
-      setOffers([
-        { name: "Cashback on First Recharge", discount: 100, claimed: false },
-        { name: "10% Off on Bill Payments", discount: 50, claimed: false },
-      ]);
-      setNotifications([
-        { type: 'Payment Success', message: '₹500 added to your wallet!' },
-        { type: 'Recharge Completed', message: 'Your bill payment of ₹300 was successful.' },
-      ]);
-      setLoading(false);
-    }, 1000);
-  }, []);
+  const navigate = useNavigate();
+  
+  useEffect(() => {
+    const fetchAccountDetails = async () => {
+      try {
+        const userId = user?._id || localStorage.getItem("userId");
+     
+  
+        if (!userId) {
+          console.warn("⚠️ No userId found");
+          return;
+        }
+  
+        const res = await axios.get(
+          `https://${import.meta.env.VITE_BACKEND}/api/myaccount/${userId}`
+        );
+        setAccountDetails(res.data);
+        setLoading(false);
+      } catch (error) {
+        console.error("❌ Failed to fetch account details", error);
+        setLoading(false);
+      }
+    };
+  
+    fetchAccountDetails();
+  }, [user]);
+  
+  
+  
+  const { logout } = useAuth();
 
   const toggleDarkMode = () => setDarkMode(!darkMode);
   const toggleChat = () => setChatOpen(!chatOpen);
@@ -68,7 +81,12 @@ const Home = () => {
     setNotifications([]);
     toast.info("All notifications cleared.");
   };
-
+  const handleLogout = () => {
+    logout();             // clears user + token
+    // ✅ Clear user state
+    navigate("/login-user");                        // ✅ Navigate to login
+  };
+  
   return (
     <div className={`min-h-screen ${darkMode ? 'bg-gray-900 text-white' : 'bg-gradient-to-r from-blue-50 via-indigo-100 to-blue-50'} p-6`}>
       <div className="">
@@ -110,7 +128,7 @@ const Home = () => {
    >
      {/* Left: Profile & QR Code */}
      <div className="flex items-center space-x-4">
-       <img src={user.profilePic} alt="Profile" className="w-16 h-16 rounded-full shadow-md border-2 border-gray-300" />
+       <img src={user?.profilePic || boy} alt="Profile" className="w-16 h-16 rounded-full shadow-md border-2 border-gray-300" />
        {/* ✅ QR Code Button with Navigation */}
        <button
          onClick={() => navigate("/qr-scanner")}
@@ -122,13 +140,14 @@ const Home = () => {
 
      {/* Right: User Info */}
      <div className="text-right">
-       <h3 className="text-2xl font-bold">{user.name}</h3>
+       <h3 className="text-2xl font-bold"> Welcome, {accountDetails?.name || "User"}</h3>
        <p className="mt-1 text-gray-400">
-         Balance: <span className="text-green-400 font-semibold">₹{user.balance}</span>
+         Balance: <span className="text-green-400 font-semibold"> ₹{accountDetails?.balance ?? "Loading..."}
+         </span>
        </p>
        <button
-         onClick={() => setUser(null)}
-         className="mt-4 px-5 py-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition duration-300 shadow-md"
+ onClick={handleLogout}
+          className="mt-4 px-5 py-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition duration-300 shadow-md"
        >
          Logout
        </button>
@@ -519,7 +538,7 @@ const Home = () => {
   </div>
   <div className="mt-4 flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
     <span>Need assistance? </span>
-    <a href="tel:+911234567890" className="underline text-yellow-500 hover:text-yellow-600">
+    <a href="/customer-support" className="underline text-yellow-500 hover:text-yellow-600">
       Call Support
     </a>
   </div>

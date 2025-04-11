@@ -30,6 +30,7 @@ export const AuthProvider = ({ children }) => {
     setUser(res.data.user);
     localStorage.setItem("paymanni_user", JSON.stringify(res.data.user));
     localStorage.setItem("paymanni_token", res.data.token); // ✅ Add this
+    localStorage.setItem("userId", res.data.user._id); // ✅ fixed
     return res.data;
   };
   
@@ -41,6 +42,8 @@ export const AuthProvider = ({ children }) => {
     setUser(res.data.user);
     localStorage.setItem("paymanni_user", JSON.stringify(res.data.user));
     localStorage.setItem("paymanni_token", res.data.token); // ✅ Add this
+    localStorage.setItem("userId", res.data.user._id); // ✅ fixed
+
     return res.data;
   };
   
