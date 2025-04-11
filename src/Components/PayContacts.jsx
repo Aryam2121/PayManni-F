@@ -12,17 +12,14 @@ const PaymentContacts = () => {
   const [selectedContacts, setSelectedContacts] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(false);
-  const [recentTransactions, setRecentTransactions] = useState([]);
 
   useEffect(() => {
     const fetchInitialData = async () => {
       try {
         const [contactsRes, transactionsRes] = await Promise.all([
           axios.get(`https://${import.meta.env.VITE_BACKEND}/api/contacts`),
-          axios.get(`https://${import.meta.env.VITE_BACKEND}/api/transactions`),
         ]);
         setContacts(contactsRes.data);
-        setRecentTransactions(transactionsRes.data);
       } catch (error) {
         console.error('Error fetching data:', error);
         toast.error('Failed to load data. Please try again.');
@@ -75,7 +72,73 @@ const PaymentContacts = () => {
     contact.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     contact.phone.includes(searchQuery)
   );
-
+  const handleSendMoney = async () => {
+    if (!amount || isNaN(amount) || Number(amount) <= 0) {
+      toast.error('Please enter a valid amount.');
+      return;
+    }
+  
+    if (selectedContacts.length === 0) {
+      toast.error('Please select at least one contact.');
+      return;
+    }
+  
+    try {
+      setLoading(true);
+  
+      // Step 1: Call backend to create Razorpay order
+      const res = await axios.post(`https://${import.meta.env.VITE_BACKEND}/api/contacts/send-money`, {
+        userId: "dummy-user-id", // replace with actual user ID if you have auth
+        amount: Number(amount),
+        paymentMethod: "razorpay",
+        contacts: selectedContacts
+      });
+  
+      const { orderId, amount: orderAmount, currency } = res.data;
+  
+      // Step 2: Initialize Razorpay
+      const options = {
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+        amount: orderAmount * 100,
+        currency,
+        name: "PayManni",
+        description: "Send Money to Contacts",
+        order_id: orderId,
+        handler: async function (response) {
+          // Step 3: Verify payment on backend
+          try {
+            const verifyRes = await axios.post(`https://${import.meta.env.VITE_BACKEND}/api/contacts/verify-payment`, {
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_signature: response.razorpay_signature,
+            });
+  
+            toast.success("Payment successful!");
+          } catch (error) {
+            console.error("Verification failed", error);
+            toast.error("Payment verification failed.");
+          }
+        },
+        prefill: {
+          name: "User",
+          email: "user@example.com",
+          contact: "9999999999",
+        },
+        theme: {
+          color: "#6366f1",
+        },
+      };
+  
+      const rzp = new window.Razorpay(options);
+      rzp.open();
+    } catch (error) {
+      console.error('Payment error:', error);
+      toast.error('Failed to initiate payment.');
+    } finally {
+      setLoading(false);
+    }
+  };
+  
   return (
     <div className="dark:bg-gray-900 dark:text-white min-h-screen px-6 py-10">
       <div className="max-w-4xl mx-auto">
@@ -177,14 +240,16 @@ const PaymentContacts = () => {
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
           />
-          <button
-            className={`w-full py-3 mt-4 text-white rounded-lg ${
-              loading ? 'bg-gray-600' : 'bg-indigo-600 hover:bg-indigo-700'
-            }`}
-            disabled={loading}
-          >
-            {loading ? 'Processing...' : 'Send Money'}
-          </button>
+         <button
+  onClick={handleSendMoney}
+  className={`w-full py-3 mt-4 text-white rounded-lg ${
+    loading ? 'bg-gray-600' : 'bg-indigo-600 hover:bg-indigo-700'
+  }`}
+  disabled={loading}
+>
+  {loading ? 'Processing...' : 'Send Money'}
+</button>
+
         </motion.div>
       </div>
     </div>
