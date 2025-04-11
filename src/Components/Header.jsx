@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import PayManni from "../assets/PayManni.png";
+import Paymanniicon from "../../public/Paymanniicon.png";
 import { FaSearch, FaBell, FaChevronDown, FaBars, FaTimes, FaSun, FaMoon } from "react-icons/fa";
 import panda from "../assets/panda.jpg";
 import { useAuth } from "../context/AuthContext"; // Assuming you have an AuthContext for authentication
@@ -50,7 +51,7 @@ const Header = () => {
     >
       {/* Logo */}
       <motion.div className="flex items-center cursor-pointer" whileHover={{ scale: 1.05 }}>
-        <img src={PayManni} alt="PayManni Logo" className="h-10" />
+        <img src={Paymanniicon} alt="PayManni Logo" className="h-10" />
         <span className="ml-2 text-2xl font-bold">PayManni</span>
       </motion.div>
 
