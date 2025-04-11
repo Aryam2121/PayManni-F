@@ -24,7 +24,7 @@ const LoginUser = () => {
       );
   
       setResponseMsg(res.data.msg);
-      localStorage.setItem("token", res.data.token); // ✅ Save token
+      localStorage.setItem("paymanni_token", res.data.token); 
       localStorage.setItem("paymanni_user", JSON.stringify(res.data.user));
   
       setTimeout(() => {

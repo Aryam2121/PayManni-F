@@ -1,23 +1,50 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
 import {
   Banknote,
+  RefreshCw,
   CreditCard,
   History,
-  KeyRound,
   ShieldCheck,
-  RefreshCw,
-} from 'lucide-react';
+  KeyRound,
+  Copy
+} from "lucide-react";
+import { motion } from "framer-motion";
+
+
+import axios from 'axios';
+
 
 const BankServices = () => {
+  const [copied, setCopied] = useState(false);
   const [userId, setUserId] = useState(null);
   const [bankData, setBankData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const handleCopy = () => {
+    if (bankData?.upiId) {
+      navigator.clipboard.writeText(bankData.upiId);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
 
-  const fetchBankData = async () => {
+  const cardVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: (i) => ({
+      opacity: 1,
+      y: 0,
+      transition: { delay: i * 0.1 }
+    })
+  };
+  const fetchBankData = async (id) => {
+    const userToFetch = typeof id === "string" ? id : userId;
+    if (!userToFetch || typeof userToFetch !== "string") {
+      console.error("Invalid userId:", userToFetch);
+      return;
+    }
+
     setLoading(true);
     try {
-      const res = await axios.get(`https://${import.meta.env.VITE_BACKEND}/api/${userId}`);
+      const res = await axios.get(`https://${import.meta.env.VITE_BACKEND}/api/myaccount/${userToFetch}`);
       setBankData(res.data);
     } catch (err) {
       console.error('Error fetching bank data:', err);
@@ -27,9 +54,14 @@ const BankServices = () => {
   };
 
   useEffect(() => {
-    const storedUserId = localStorage.getItem("userId");
-    if (storedUserId) {
-      setUserId(storedUserId);
+    const storedUser = localStorage.getItem("paymanni_user");
+    const parsedUser = storedUser ? JSON.parse(storedUser) : null;
+
+    if (parsedUser && parsedUser._id) {
+      setUserId(parsedUser._id);
+      fetchBankData(parsedUser._id);
+    } else {
+      console.warn("No valid user found");
     }
   }, []);
 
@@ -39,102 +71,142 @@ const BankServices = () => {
     }
   }, [userId]);
 
-
   return (
-    <div className="p-6 max-w-6xl mx-auto text-gray-800 dark:text-gray-100 animate-fade-in">
-      <div className="flex items-center justify-between mb-8">
-        <h2 className="text-4xl font-extrabold flex items-center gap-3 text-indigo-700 dark:text-indigo-400">
-          <Banknote className="w-8 h-8" /> Banking Services
+    <div className="p-6 text-gray-100 dark:bg-[#0f172a] min-h-screen transition-colors">
+      <div className="flex items-center justify-between mb-10">
+        <h2 className="text-4xl font-bold flex items-center gap-3 text-indigo-400">
+          <Banknote className="w-8 h-8 animate-pulse" />
+          Banking Services
         </h2>
         <button
           onClick={fetchBankData}
-          className="flex items-center gap-2 px-4 py-2 text-sm bg-indigo-100 dark:bg-indigo-800 text-indigo-700 dark:text-indigo-100 rounded-lg hover:bg-indigo-200 dark:hover:bg-indigo-700 shadow-md"
+          className="flex items-center gap-2 px-4 py-2 text-sm bg-indigo-700 hover:bg-indigo-600 transition-colors text-white rounded-xl shadow-md"
         >
-          <RefreshCw className="w-4 h-4" /> Refresh
+          <RefreshCw className="w-4 h-4 animate-spin-slow" />
+          Refresh
         </button>
       </div>
 
       {loading ? (
-        <div className="text-center py-20 text-gray-500 dark:text-gray-400 animate-pulse">
+        <div className="text-center py-24 text-gray-400 animate-pulse">
           Loading banking data...
         </div>
       ) : (
         <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-8">
           {/* Linked Bank Accounts */}
-          <div className="bg-white dark:bg-gray-900 rounded-3xl shadow-2xl p-6 hover:shadow-3xl border border-gray-100 dark:border-gray-700 transition-all">
-            <h3 className="text-2xl font-semibold mb-5 flex items-center gap-2 text-blue-600 dark:text-blue-400">
-              <CreditCard className="w-6 h-6" /> UPI Linked Bank Accounts
+          <motion.div
+            variants={cardVariants}
+            initial="hidden"
+            animate="visible"
+            custom={0}
+            className="bg-[#1e293b] rounded-2xl shadow-xl p-6 border border-gray-700 hover:shadow-indigo-500/20 transition-shadow"
+          >
+            <h3 className="text-xl font-semibold mb-4 flex items-center gap-2 text-blue-400">
+              <CreditCard className="w-6 h-6" />
+              Linked Bank Accounts
             </h3>
             <ul className="space-y-4">
               {bankData?.linkedAccounts?.length ? (
-                bankData.linkedAccounts.map((acc, index) => (
+                bankData.linkedAccounts.map((acc, i) => (
                   <li
-                    key={index}
-                    className="bg-gray-50 dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 hover:ring-2 hover:ring-indigo-500"
+                    key={i}
+                    className="bg-[#0f172a] p-4 rounded-xl border border-gray-700 hover:border-indigo-500 transition-all"
                   >
-                    <p className="font-semibold text-lg">{acc.bankName}</p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">{acc.accountNumberMasked}</p>
+                    <p className="font-semibold text-base">{acc.bankName}</p>
+                    <p className="text-sm text-gray-400">{acc.accountNumberMasked}</p>
                   </li>
                 ))
               ) : (
-                <p className="text-sm text-gray-500">No accounts linked yet.</p>
+                <p className="text-sm text-gray-500">No linked accounts.</p>
               )}
             </ul>
-          </div>
+          </motion.div>
 
           {/* Mini Statement */}
-          <div className="bg-white dark:bg-gray-900 rounded-3xl shadow-2xl p-6 hover:shadow-3xl border border-gray-100 dark:border-gray-700 transition-all">
-            <h3 className="text-2xl font-semibold mb-5 flex items-center gap-2 text-green-600 dark:text-green-400">
-              <History className="w-6 h-6" /> Mini Statement
+          <motion.div
+            variants={cardVariants}
+            initial="hidden"
+            animate="visible"
+            custom={1}
+            className="bg-[#1e293b] rounded-2xl shadow-xl p-6 border border-gray-700 hover:shadow-green-500/20 transition-shadow"
+          >
+            <h3 className="text-xl font-semibold mb-4 flex items-center gap-2 text-green-400">
+              <History className="w-6 h-6" />
+              Recent Transactions
             </h3>
-            <ul className="space-y-4 max-h-64 overflow-y-auto pr-1 custom-scrollbar">
+            <ul className="space-y-3 max-h-64 overflow-y-auto pr-1 custom-scrollbar">
               {bankData?.transactions?.length ? (
-                bankData.transactions.slice(0, 5).map((txn, index) => (
+                bankData.transactions.map((txn, i) => (
                   <li
-                    key={index}
-                    className="flex justify-between items-center p-4 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700"
+                    key={i}
+                    className="flex justify-between items-center p-3 rounded-lg bg-[#0f172a] border border-gray-700"
                   >
                     <div>
-                      <p className="font-medium text-base">{txn.description}</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">{txn.date}</p>
+                      <p className="text-base font-medium">{txn.description}</p>
+                      <p className="text-xs text-gray-500">{txn.date}</p>
                     </div>
                     <span
-                      className={`text-base font-semibold ${txn.type === 'debit' ? 'text-red-500' : 'text-green-500'}`}
+                      className={`text-sm font-semibold ${txn.type === 'debit'
+                        ? 'text-red-400'
+                        : 'text-green-400'
+                        }`}
                     >
                       {txn.type === 'debit' ? '-' : '+'}₹{txn.amount}
                     </span>
                   </li>
                 ))
               ) : (
-                <p className="text-sm text-gray-500">No recent transactions.</p>
+                <p className="text-sm text-gray-500">No transactions yet.</p>
               )}
             </ul>
-          </div>
+          </motion.div>
 
           {/* Virtual UPI ID */}
-          <div className="bg-white dark:bg-gray-900 rounded-3xl shadow-2xl p-6 hover:shadow-3xl border border-gray-100 dark:border-gray-700 transition-all flex flex-col justify-between">
-            <h3 className="text-2xl font-semibold mb-5 flex items-center gap-2 text-purple-600 dark:text-purple-400">
-              <ShieldCheck className="w-6 h-6" /> Virtual UPI ID
+          <motion.div
+            variants={cardVariants}
+            initial="hidden"
+            animate="visible"
+            custom={2}
+            className="bg-[#1e293b] rounded-2xl shadow-xl p-6 border border-gray-700 hover:shadow-purple-500/20 transition-shadow flex flex-col justify-between"
+          >
+            <h3 className="text-xl font-semibold mb-4 flex items-center gap-2 text-purple-400">
+              <ShieldCheck className="w-6 h-6" />
+              Virtual UPI ID
             </h3>
-            <p className="text-3xl font-extrabold text-indigo-600 dark:text-indigo-300">
-              {bankData?.virtualUpiId || 'name@paymanni'}
-            </p>
-          </div>
+            <div className="flex items-center gap-2 mt-6">
+              <p className="text-2xl font-bold text-indigo-400 truncate">{bankData?.upiId}</p>
+              {bankData?.upiId && (
+                <button onClick={handleCopy} title="Copy to clipboard">
+                  <Copy className="w-5 h-5 text-gray-400 hover:text-white transition" />
+                </button>
+              )}
+            </div>
+            {copied && (
+              <p className="text-sm text-green-400 mt-2 animate-fadeIn">Copied!</p>
+            )}
+          </motion.div>
 
-          {/* Set / Change UPI PIN */}
-          <div className="bg-white dark:bg-gray-900 rounded-3xl shadow-2xl p-6 hover:shadow-3xl border border-gray-100 dark:border-gray-700 transition-all flex flex-col justify-between">
+          {/* UPI PIN Management */}
+          <motion.div
+            variants={cardVariants}
+            initial="hidden"
+            animate="visible"
+            custom={3}
+            className="bg-[#1e293b] rounded-2xl shadow-xl p-6 border border-gray-700 hover:shadow-yellow-500/20 transition-shadow flex flex-col justify-between"
+          >
             <div>
-              <h3 className="text-2xl font-semibold mb-5 flex items-center gap-2 text-yellow-600 dark:text-yellow-400">
-                <KeyRound className="w-6 h-6" /> Set / Change UPI PIN
+              <h3 className="text-xl font-semibold mb-4 flex items-center gap-2 text-yellow-400">
+                <KeyRound className="w-6 h-6" />
+                Manage UPI PIN
               </h3>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mb-5">
-                Securely manage your UPI PIN linked to your bank account.
+              <p className="text-sm text-gray-400 mb-4">
+                Securely set or change your UPI PIN linked with your account.
               </p>
             </div>
-            <button className="mt-auto px-5 py-3 bg-indigo-600 text-white text-sm rounded-xl hover:bg-indigo-700 transition-colors font-medium shadow-lg">
-              Manage UPI PIN
+            <button className="px-5 py-3 bg-indigo-600 hover:bg-indigo-700 transition-colors text-white text-sm rounded-xl font-semibold shadow-lg">
+              Set / Change PIN
             </button>
-          </div>
+          </motion.div>
         </div>
       )}
     </div>

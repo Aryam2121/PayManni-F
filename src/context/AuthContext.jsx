@@ -29,10 +29,10 @@ export const AuthProvider = ({ children }) => {
     );
     setUser(res.data.user);
     localStorage.setItem("paymanni_user", JSON.stringify(res.data.user));
+    localStorage.setItem("paymanni_token", res.data.token); // ✅ Add this
     return res.data;
   };
-
-  // Register
+  
   const register = async (formData) => {
     const res = await axios.post(
       `https://${import.meta.env.VITE_BACKEND}/api/register`,
@@ -40,13 +40,18 @@ export const AuthProvider = ({ children }) => {
     );
     setUser(res.data.user);
     localStorage.setItem("paymanni_user", JSON.stringify(res.data.user));
+    localStorage.setItem("paymanni_token", res.data.token); // ✅ Add this
     return res.data;
   };
+  
+  
 
   // Logout
   const logout = () => {
     setUser(null);
-    localStorage.removeItem("authToken");
+    localStorage.removeItem("paymanni_user");
+    localStorage.removeItem("paymanni_token"); // ✅ Add this
+    localStorage.removeItem("userId"); // optional
   };
   
   return (

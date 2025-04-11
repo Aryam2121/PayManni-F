@@ -73,14 +73,15 @@ const Home = () => {
     <div className={`min-h-screen ${darkMode ? 'bg-gray-900 text-white' : 'bg-gradient-to-r from-blue-50 via-indigo-100 to-blue-50'} p-6`}>
       <div className="">
          {/* Welcome Header */}
-    <motion.h2
-      className="text-4xl font-extrabold text-center mb-4 transition-colors duration-300"
-      initial={{ opacity: 0, y: -10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 1 }}
-    >
-      Welcome to <span className="text-blue-500">PayManni</span>
-    </motion.h2>
+         <motion.h2
+  className="text-5xl font-[cursive] text-center mb-6 text-white drop-shadow-xl transition-all duration-500 italic"
+  initial={{ opacity: 0, y: -20 }}
+  animate={{ opacity: 1, y: 0 }}
+  transition={{ duration: 1 }}
+>
+  Welcome to <span className="text-blue-400 font-bold tracking-wide italic">PayManni</span>
+</motion.h2>
+
 
     {/* Dark Mode Toggle */}
     <div className="flex justify-end">
