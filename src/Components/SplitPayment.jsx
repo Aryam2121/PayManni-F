@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { FiDollarSign, FiUserPlus, FiTrash2 } from "react-icons/fi";
 import axios from "axios";
+import { useAuth } from "../context/AuthContext";
 
 const GroupPaymentSplit = () => {
   const [amount, setAmount] = useState(0);
@@ -8,6 +9,9 @@ const GroupPaymentSplit = () => {
   const [selectedGroup, setSelectedGroup] = useState(null);
   const [newGroupName, setNewGroupName] = useState("");
   const [newUser, setNewUser] = useState("");
+  const [error, setError] = useState("");
+  const { user } = useAuth();
+  const userId = user?._id || localStorage.getItem("userId");
 
   const API_URL = `https://${import.meta.env.VITE_BACKEND}/api`;
 
@@ -30,6 +34,7 @@ const GroupPaymentSplit = () => {
       await axios.post(`${API_URL}/create-group`, {
         name: newGroupName,
         totalAmount: amount,
+        userId,
       });
       setNewGroupName("");
       fetchGroups();
@@ -71,6 +76,28 @@ const GroupPaymentSplit = () => {
       fetchGroups();
     } catch (error) {
       console.error("Error updating payment", error);
+    }
+  };
+
+  const verifyAndCreateOrder = async (group) => {
+    const totalPayment = group.members.reduce((acc, user) => acc + (user.payment || 0), 0);
+    if (totalPayment !== amount) {
+      setError("Total payment does not match the required amount. Please verify payments.");
+      return;
+    }
+
+    try {
+      await axios.post(`${API_URL}/create-order`, {
+        groupId: group._id,
+        totalAmount: amount,
+        members: group.members,
+      });
+      setError(""); // Clear any previous errors
+      alert("Order created successfully!");
+      fetchGroups();
+    } catch (error) {
+      console.error("Error creating order", error);
+      setError("An error occurred while creating the order. Please try again.");
     }
   };
 
@@ -136,9 +163,7 @@ const GroupPaymentSplit = () => {
               <h4 className="text-lg font-semibold text-gray-100">{group.name}</h4>
               <button
                 onClick={() => setSelectedGroup(group._id)}
-                className={`px-4 py-2 rounded-md shadow-md transition ${
-                  selectedGroup === group._id ? "bg-green-500 text-white" : "bg-indigo-600 text-white hover:bg-indigo-700"
-                }`}
+                className={`px-4 py-2 rounded-md shadow-md transition ${selectedGroup === group._id ? "bg-green-500 text-white" : "bg-indigo-600 text-white hover:bg-indigo-700"}`}
               >
                 {selectedGroup === group._id ? "Selected" : "Select Group"}
               </button>
@@ -197,10 +222,13 @@ const GroupPaymentSplit = () => {
           </div>
         ))}
 
+        {/* Error Message */}
+        {error && <p className="text-red-500 text-center mt-4">{error}</p>}
+
         {/* Final Split Payment Button */}
         <div className="text-center mt-6">
           <button
-            onClick={splitPayment}
+            onClick={() => verifyAndCreateOrder(groups.find((group) => group._id === selectedGroup))}
             className="px-6 py-3 bg-indigo-600 text-white rounded-lg w-full shadow-lg hover:bg-indigo-700 transition duration-300"
           >
             Finalize Payment Split
