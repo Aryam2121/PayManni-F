@@ -16,62 +16,82 @@ export default function BusBooking() {
   const [loading, setLoading] = useState(false);
   const [buses, setBuses] = useState([]);
   const [showBookings, setShowBookings] = useState(false);
-
+  const [selectedBus, setSelectedBus] = useState(null);
+  const [selectedSeats, setSelectedSeats] = useState([]);
+  
+  const openSeatSelector = (bus) => {
+    setSelectedBus(bus);
+    setSelectedSeats([]);
+  };
   const fetchBuses = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`https://${import.meta.env.VITE_BACKEND}/buses?from=${from}&to=${to}&seatType=${seatType}`, {
-        method: 'GET',
-        headers: {
-          'X-TripGo-Key': 'e43957128fb7bd8d7a947caecd05cf22',
-          'Content-Type': 'application/json',
-        },
+      const queryParams = new URLSearchParams();
+  
+      if (from) queryParams.append("from", from);
+      if (to) queryParams.append("to", to);
+      if (date) queryParams.append("date", date); // Must be in YYYY-MM-DD format
+      if (seatType) queryParams.append("seatType", seatType);
+  
+      const response = await fetch(`https://${import.meta.env.VITE_BACKEND}/buses?${queryParams.toString()}`, {
+        method: "GET",
       });
-
-      if (response.ok) {
-        const data = await response.json();
-        setBuses(data);
-      } else {
-        console.error("Error fetching buses:", response.statusText);
+  
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Error fetching buses:", errorData.message || response.statusText);
+        return;
       }
+  
+      const data = await response.json();
+      setBuses(data);
     } catch (error) {
-      console.error("Error fetching buses:", error);
+      console.error("Network or server error while fetching buses:", error);
     } finally {
       setLoading(false);
     }
   };
+  
 
-  const bookBus = async (bus) => {
+  const bookBus = async (bus, payment, user, from, to, seatType, date) => {
     try {
       const response = await fetch(`https://${import.meta.env.VITE_BACKEND}/bookBus`, {
         method: 'POST',
         headers: {
-          'X-TripGo-Key': 'e43957128fb7bd8d7a947caecd05cf22',
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          busId: bus.id,
-          user: "user123",
-          date: new Date().toLocaleDateString(),
+          busId: bus._id,
+          user: {
+            _id: user._id,
+            upi: user.upi
+          },
+          date, // should be in 'YYYY-MM-DD' format
           from,
           to,
           seatType,
-        }),
+          payment // includes razorpay_order_id, razorpay_payment_id, razorpay_signature
+        })
       });
-
+  
+      const data = await response.json();
+  
       if (response.ok) {
-        alert("Bus booked successfully");
+        alert("✅ Bus booked successfully!");
+        console.log("Booking Info:", data.booking);
       } else {
-        alert("Booking failed");
+        alert(`❌ Booking failed: ${data.message}`);
       }
     } catch (error) {
-      console.error("Error booking bus:", error);
+      console.error("❌ Error booking bus:", error);
+      alert("Something went wrong during booking.");
     }
   };
-
+  
   const filteredBuses = useMemo(() => {
     return buses.filter((bus) => !seatType || bus.type.includes(seatType));
   }, [buses, seatType]);
+      
 
   const offers = [
     { id: 1, image: mahakumbh, link: "#" },
@@ -176,8 +196,8 @@ export default function BusBooking() {
                 <p className="text-gray-300 flex items-center gap-2"><DollarSign /> {bus.price}</p>
               </div>
               <button className="bg-green-500 hover:bg-green-600 text-white font-bold px-5 py-2 rounded-xl shadow-lg"
-                onClick={() => bookBus(bus)}
-              >
+onClick={() => openSeatSelector(bus)}
+>
                 Book Now
               </button>
             </motion.div>
@@ -192,6 +212,53 @@ export default function BusBooking() {
           <img key={offer.id} src={offer.image} className="h-[250px] rounded-xl shadow-lg cursor-pointer" />
         ))}
       </div>
+      {selectedBus && (
+  <div className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50">
+    <div className="bg-white dark:bg-gray-900 p-6 rounded-xl w-full max-w-lg space-y-4">
+      <h2 className="text-xl font-bold text-center">🪑 Select Seats for {selectedBus.name}</h2>
+
+      <div className="grid grid-cols-4 gap-3">
+        {selectedBus.seats.map((seat, idx) => (
+          <button
+            key={idx}
+            className={`p-3 rounded-xl ${
+              selectedSeats.includes(seat.number)
+                ? "bg-green-500 text-white"
+                : seat.available
+                ? "bg-gray-200 dark:bg-gray-700 text-black dark:text-white"
+                : "bg-red-400 text-white cursor-not-allowed"
+            }`}
+            disabled={!seat.available}
+            onClick={() =>
+              setSelectedSeats((prev) =>
+                prev.includes(seat.number)
+                  ? prev.filter((s) => s !== seat.number)
+                  : [...prev, seat.number]
+              )
+            }
+          >
+            {seat.number}
+          </button>
+        ))}
+      </div>
+
+      <div className="flex justify-between mt-4">
+        <button
+          className="px-4 py-2 rounded-lg bg-gray-500 text-white"
+          onClick={() => setSelectedBus(null)}
+        >
+          Cancel
+        </button>
+        <button
+          className="px-4 py-2 rounded-lg bg-blue-600 text-white"
+          onClick={() => bookSelectedSeats()}
+        >
+          Pay ₹{selectedSeats.length * selectedBus.price}
+        </button>
+      </div>
+    </div>
+  </div>
+)}
     </div>
   );
 }

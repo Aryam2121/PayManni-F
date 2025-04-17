@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { useAuth } from "../context/AuthContext";
 
 const LoanApplication = () => {
   const [amount, setAmount] = useState('');
@@ -9,35 +10,43 @@ const LoanApplication = () => {
   const [interestRate, setInterestRate] = useState(5);
   const [monthlyEMI, setMonthlyEMI] = useState(0);
   const [approvalChance, setApprovalChance] = useState('Calculating...');
-  const [progress, setProgress] = useState(0);
-  const [darkMode, setDarkMode] = useState(false);
-  const [loans, setLoans] = useState([]);  // State to hold all loans
-  const [loanId, setLoanId] = useState(''); // State for loan ID input
+  const [loans, setLoans] = useState([]);
+  const [loanId, setLoanId] = useState('');
   const [selectedLoan, setSelectedLoan] = useState(null);
+  const [userUpi, setUserUpi] = useState('');
+  const { user } = useAuth();
+  const userId = user?._id || localStorage.getItem("userId");
 
+  useEffect(() => {
+    // Assuming you have a /me route or similar to get user profile
+    const fetchUser = async () => {
+      const res = await fetch(`https://${import.meta.env.VITE_BACKEND}/api/myaccount/${userId}`, { credentials: "include" });
+      const data = await res.json();
+      setUserUpi(data.upiId || "aryamangupta@paymanni");
+    };
+    fetchUser();
+  }, []);
   useEffect(() => {
     fetchLoans();
   }, []);
 
   const fetchLoans = async () => {
     try {
-      const response = await fetch(`https://${import.meta.env.VITE_BACKEND}/api/loans`);
-      const text = await response.text();  // Get raw response text
-      console.log("Raw Response:", text);  // Log it to see what's being returned
-      const data = JSON.parse(text);  // Try parsing as JSON
+      const res = await fetch(`https://${import.meta.env.VITE_BACKEND}/api/loans`, { credentials: 'include' });
+      const text = await res.text();
+      const data = JSON.parse(text);
       setLoans(data.loans || []);
-    } catch (error) {
-      console.error("Error fetching loans:", error);
+    } catch (err) {
+      console.error("Error fetching loans:", err);
     }
   };
-  
 
   const fetchLoanById = async () => {
     if (!loanId) return;
     try {
-      const response = await fetch(`https://${import.meta.env.VITE_BACKEND}/api/loans/${loanId}`);
-      const data = await response.json();
-      if (response.status === 200) {
+      const res = await fetch(`https://${import.meta.env.VITE_BACKEND}/api/loans/${loanId}`, { credentials: 'include' });
+      const data = await res.json();
+      if (res.status === 200) {
         setSelectedLoan(data.loan);
         setAmount(data.loan.amount);
         setTerm(data.loan.term);
@@ -48,7 +57,7 @@ const LoanApplication = () => {
       } else {
         setStatus("❌ Loan not found");
       }
-    } catch (error) {
+    } catch {
       setStatus("❌ Something went wrong!");
     }
   };
@@ -59,13 +68,12 @@ const LoanApplication = () => {
 
   useEffect(() => {
     if (amount && term) {
-      const principal = parseFloat(amount);
-      const months = parseInt(term);
-      const rate = interestRate / 100 / 12;
-      const emi = (principal * rate) / (1 - Math.pow(1 + rate, -months));
+      const p = parseFloat(amount);
+      const n = parseInt(term);
+      const r = interestRate / 100 / 12;
+      const emi = (p * r) / (1 - Math.pow(1 + r, -n));
       setMonthlyEMI(emi.toFixed(2));
-
-      const approvalRate = Math.min(95, Math.max(30, 100 - principal / 10));
+      const approvalRate = Math.min(95, Math.max(30, 100 - p / 10));
       setApprovalChance(`${approvalRate}% chance of approval`);
     }
   }, [amount, term, interestRate]);
@@ -73,10 +81,10 @@ const LoanApplication = () => {
   const handleApplyLoan = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setStatus("");
+    setStatus('');
 
     if (parseFloat(amount) < 100 || parseFloat(amount) > 700000000) {
-      setStatus("❌ Loan amount must be between $100 and $700000000.");
+      setStatus("❌ Loan amount must be between ₹100 and ₹700,000,000.");
       setLoading(false);
       return;
     }
@@ -87,22 +95,21 @@ const LoanApplication = () => {
     }
 
     try {
-      const response = await fetch(`https://${import.meta.env.VITE_BACKEND}/api/loans/apply`, {
+      const res = await fetch(`https://${import.meta.env.VITE_BACKEND}/api/loans/apply`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount, term }),
+        credentials: "include",
+        body: JSON.stringify({ amount, term })
       });
-
-      const data = await response.json();
+      const data = await res.json();
       setLoading(false);
-
       if (data.success) {
-        setStatus(data.loan.status);
+        setStatus("✅ Loan applied successfully!");
         fetchLoans();
       } else {
         setStatus(data.message || "❌ Something went wrong!");
       }
-    } catch (error) {
+    } catch (err) {
       setLoading(false);
       setStatus("❌ Something went wrong! Please try again.");
     }
@@ -111,53 +118,64 @@ const LoanApplication = () => {
   const handleRepayEMI = async (loanId, amount) => {
     setLoading(true);
     try {
-      const response = await fetch(`https://${import.meta.env.VITE_BACKEND}/api/loans/payment/order`, {
+      const res = await fetch(`https://${import.meta.env.VITE_BACKEND}/api/loans/payment/order`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ loanId, amount }),
+        credentials: "include",
+        body: JSON.stringify({ loanId, amount })
       });
 
-      const data = await response.json();
-      if (data.success) {
-        const options = {
-          key: "rzp_test_7K36B5aZcZTopD",
-          amount: data.order.amount,
-          currency: "INR",
-          name: "PayManni Loan Repayment",
-          description: "EMI Payment",
-          order_id: data.order.id,
-          handler: async function (response) {
-            const verifyResponse = await fetch(`https://${import.meta.env.VITE_BACKEND}/api/loans/payment/verify`, {
+      const data = await res.json();
+      if (!data.success) throw new Error("Payment order failed");
+
+      const options = {
+        key: import.meta.env.VITE_RAZORPAY_KEY,
+        amount: data.order.amount,
+        currency: "INR",
+        name: "PayManni Loan Repayment",
+        description: "EMI Payment",
+        order_id: data.order.id,
+        handler: async (response) => {
+          const verifyRes = await fetch(`https://${import.meta.env.VITE_BACKEND}/api/loans/payment/verify`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify({
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+            })
+          });
+          const verifyData = await verifyRes.json();
+
+          if (verifyData.success) {
+            await fetch(`https://${import.meta.env.VITE_BACKEND}/api/loans/payment/repay`, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
+              credentials: "include",
               body: JSON.stringify({
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_signature: response.razorpay_signature,
                 loanId,
-              }),
+                amount,
+                paymentId: response.razorpay_payment_id,
+                userUpi
+              })
             });
+            fetchLoans();
+            setStatus("✅ EMI Payment Successful!");
+          } else {
+            setStatus("❌ Payment verification failed!");
+          }
+          setLoading(false);
+        },
+        theme: { color: "#6366F1" }
+      };
 
-            const verifyData = await verifyResponse.json();
-            if (verifyData.success) {
-              setStatus("✅ EMI Paid Successfully!");
-              fetchLoans();
-            } else {
-              setStatus("❌ Payment Verification Failed!");
-            }
-          },
-          theme: { color: "#007bff" },
-        };
-
-        const rzp = new window.Razorpay(options);
-        rzp.open();
-      } else {
-        setStatus("❌ Could not initiate payment!");
-      }
+      const rzp = new window.Razorpay(options);
+      rzp.open();
     } catch (error) {
-      setStatus("❌ Error processing payment!");
+      setLoading(false);
+      setStatus("❌ Error during payment");
     }
-    setLoading(false);
   };
   return (
     <div className="p-6  shadow-2xl bg-gray-900 text-white transition-all" aria-live="polite">

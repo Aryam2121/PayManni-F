@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { FiDollarSign, FiUserPlus, FiTrash2 } from "react-icons/fi";
 import axios from "axios";
 import { useAuth } from "../context/AuthContext";
+import { FiTrash2, FiUserPlus, FiDollarSign } from "react-icons/fi";
 
 const GroupPaymentSplit = () => {
   const [amount, setAmount] = useState(0);
@@ -10,6 +10,7 @@ const GroupPaymentSplit = () => {
   const [newGroupName, setNewGroupName] = useState("");
   const [newUser, setNewUser] = useState("");
   const [error, setError] = useState("");
+  const [walletBalance, setWalletBalance] = useState(null);
   const { user } = useAuth();
   const userId = user?._id || localStorage.getItem("userId");
 
@@ -29,7 +30,7 @@ const GroupPaymentSplit = () => {
   };
 
   const createGroup = async () => {
-    if (!newGroupName.trim()) return;
+    if (!newGroupName.trim() || !amount) return;
     try {
       await axios.post(`${API_URL}/create-group`, {
         name: newGroupName,
@@ -37,6 +38,7 @@ const GroupPaymentSplit = () => {
         userId,
       });
       setNewGroupName("");
+      setAmount(0);
       fetchGroups();
     } catch (error) {
       console.error("Error creating group", error);
@@ -44,10 +46,10 @@ const GroupPaymentSplit = () => {
   };
 
   const addUserToGroup = async () => {
-    if (selectedGroup === null || !newUser.trim()) return;
+    if (!selectedGroup || !newUser.trim()) return;
     try {
       await axios.post(`${API_URL}/add-user`, {
-        groupId: selectedGroup,
+        groupId: selectedGroup._id,
         userName: newUser,
       });
       setNewUser("");
@@ -57,183 +59,260 @@ const GroupPaymentSplit = () => {
     }
   };
 
-  const removeUserFromGroup = async (groupId, userName) => {
+  const removeUserFromGroup = async (userName) => {
     try {
-      await axios.post(`${API_URL}/remove-user`, { groupId, userName });
+      await axios.post(`${API_URL}/remove-user`, {
+        groupId: selectedGroup._id,
+        userName,
+      });
       fetchGroups();
     } catch (error) {
       console.error("Error removing user", error);
     }
   };
 
-  const updateUserPayment = async (groupId, userName, payment) => {
-    try {
-      await axios.post(`${API_URL}/update-payment`, {
-        groupId,
-        userName,
-        payment,
-      });
-      fetchGroups();
-    } catch (error) {
-      console.error("Error updating payment", error);
-    }
-  };
-
-  const verifyAndCreateOrder = async (group) => {
-    const totalPayment = group.members.reduce((acc, user) => acc + (user.payment || 0), 0);
-    if (totalPayment !== amount) {
-      setError("Total payment does not match the required amount. Please verify payments.");
-      return;
-    }
-
-    try {
-      await axios.post(`${API_URL}/create-order`, {
-        groupId: group._id,
-        totalAmount: amount,
-        members: group.members,
-      });
-      setError(""); // Clear any previous errors
-      alert("Order created successfully!");
-      fetchGroups();
-    } catch (error) {
-      console.error("Error creating order", error);
-      setError("An error occurred while creating the order. Please try again.");
-    }
-  };
-
-  const splitPayment = async () => {
-    if (!selectedGroup) return;
+ // Split Payments logic
+const splitPayments = async () => {
+  if (selectedGroup && selectedGroup._id) {
     try {
       await axios.post(`${API_URL}/split-payment`, {
-        groupId: selectedGroup,
+        groupId: selectedGroup._id,
       });
-      alert("Payment split successfully!");
-      fetchGroups();
+      fetchGroups(); // Reload the groups after splitting payment
     } catch (error) {
       console.error("Error splitting payment", error);
+    }
+  } else {
+    console.error("Selected group is not valid:", selectedGroup);
+  }
+};
+
+// useEffect to call splitPayments when selectedGroup changes
+useEffect(() => {
+  if (selectedGroup) {
+    splitPayments();
+  }
+}, [selectedGroup]); // This effect runs only when selectedGroup changes
+
+
+const createRazorpayOrder = async (userName, group) => {
+  try {
+    const { data } = await axios.post(`${API_URL}/create-order`, {
+      groupId: group._id,
+      userName,
+    });
+
+    const options = {
+      key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+      amount: data.order.amount,
+      currency: "INR",
+      name: "Group Split",
+      description: `Payment for ${group.name}`,
+      order_id: data.order.id,
+      handler: async (response) => {
+        verifyPayment(response, userName, "razorpay");
+      },
+      prefill: {
+        name: user?.name,
+        email: user?.email,
+      },
+      theme: {
+        color: "#6366f1",
+      },
+    };
+
+    const rzp = new window.Razorpay(options);
+    rzp.open();
+  } catch (error) {
+    console.error("Error creating order", error);
+  }
+};
+
+  const verifyPayment = async (response, userName, method) => {
+    try {
+      await axios.post(`${API_URL}/verify-payment`, {
+        razorpay_order_id: response.razorpay_order_id,
+        razorpay_payment_id: response.razorpay_payment_id,
+        razorpay_signature: response.razorpay_signature,
+        groupId: selectedGroup._id,
+        userName,
+        method,
+      });
+      fetchGroups();
+      alert("Payment successful!");
+    } catch (error) {
+      console.error("Payment verification failed", error);
+    }
+  };
+
+  const payWithWallet = async (userName) => {
+    try {
+      const res = await axios.post(`${API_URL}/checkWalletBalance`, {
+        groupId: selectedGroup._id,
+        userName,
+      });
+
+      if (res.data.canPayWithWallet) {
+        await verifyPayment({}, userName, "wallet");
+      } else {
+        alert(res.data.message || "Wallet payment not possible");
+      }
+    } catch (error) {
+      console.error("Wallet error", error);
+    }
+  };
+
+  const viewGroupTransactions = async () => {
+    try {
+      const res = await axios.get(`${API_URL}/group-transactions/${selectedGroup._id}`);
+      console.log("Group Transactions:", res.data.transactions);
+      // You can display these in a modal or table
+    } catch (error) {
+      console.error("Fetching group transactions failed", error);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 text-gray-200 py-10 px-4">
-      <div className="max-w-4xl mx-auto bg-gray-800 rounded-xl shadow-lg p-6 transition-transform transform hover:scale-105">
-        <h2 className="text-3xl font-bold text-gray-100 mb-6 text-center">
-          Group Payment Split
-        </h2>
+    <div className="p-6  bg-gradient-to-br from-gray-900 via-gray-950 to-black min-h-screen text-white">
+      <h2 className="text-4xl font-bold mb-8 text-center text-indigo-400 drop-shadow-md">
+        💸 Group Payment Split
+      </h2>
 
-        {/* Amount Input */}
-        <div className="mb-6">
-          <label className="text-lg font-medium text-gray-300">Enter Amount</label>
-          <div className="flex items-center border border-gray-600 rounded-lg p-3 mt-2 focus-within:border-blue-500 bg-gray-700">
-            <FiDollarSign className="text-gray-400 text-xl" />
-            <input
-              type="number"
-              value={amount}
-              onChange={(e) => setAmount(parseFloat(e.target.value) || 0)}
-              placeholder="Amount"
-              className="w-full p-2 outline-none border-none bg-gray-700 text-gray-200"
-            />
-          </div>
-        </div>
+      {/* Create Group Inputs */}
+      <div className="flex flex-col md:flex-row items-center gap-4 mb-8 bg-black/20 p-4 rounded-xl backdrop-blur-md border border-gray-700">
+        <input
+          type="text"
+          placeholder="New Group Name"
+          value={newGroupName}
+          onChange={(e) => setNewGroupName(e.target.value)}
+          className="input input-bordered w-full md:w-1/3 bg-gray-800 text-white border-indigo-500 rounded-lg focus:ring-2 focus:ring-indigo-500"
+        />
+        <input
+          type="number"
+          placeholder="Total Amount"
+          value={amount}
+          onChange={(e) => setAmount(e.target.value)}
+          className="input input-bordered w-full md:w-1/3 bg-gray-800 text-white border-indigo-500 rounded-lg focus:ring-2 focus:ring-indigo-500"
+        />
+        <button
+          onClick={createGroup}
+          className="px-6 py-2 rounded-lg bg-gradient-to-r from-indigo-500 to-purple-600 hover:scale-105 transform transition shadow-lg hover:shadow-indigo-500/50"
+        >
+          Create Group
+        </button>
+      </div>
 
-        {/* Create Group */}
-        <div className="mb-6">
-          <h3 className="text-xl font-semibold text-gray-300 mb-3">Create Group</h3>
-          <div className="flex gap-3">
-            <input
-              type="text"
-              value={newGroupName}
-              onChange={(e) => setNewGroupName(e.target.value)}
-              placeholder="Group Name"
-              className="p-2 flex-1 border-2 border-gray-600 rounded-lg bg-gray-700 text-gray-200 focus:ring-2 focus:ring-blue-500"
-            />
-            <button
-              onClick={createGroup}
-              className="px-6 py-3 bg-blue-500 text-white rounded-lg shadow-md hover:bg-blue-600 transition duration-300"
-            >
-              Create
-            </button>
-          </div>
-        </div>
-
-        {/* List Groups */}
+      {/* Group Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {groups.map((group) => (
-          <div key={group._id} className="bg-gray-700 p-4 rounded-lg shadow-md mb-4">
-            <div className="flex justify-between items-center">
-              <h4 className="text-lg font-semibold text-gray-100">{group.name}</h4>
-              <button
-                onClick={() => setSelectedGroup(group._id)}
-                className={`px-4 py-2 rounded-md shadow-md transition ${selectedGroup === group._id ? "bg-green-500 text-white" : "bg-indigo-600 text-white hover:bg-indigo-700"}`}
-              >
-                {selectedGroup === group._id ? "Selected" : "Select Group"}
-              </button>
+          <div
+            key={group._id}
+            className={`p-5 rounded-2xl border backdrop-blur-md transition-all duration-300 bg-black/30 shadow-xl hover:scale-[1.02] hover:shadow-indigo-500/30 ${
+              selectedGroup?._id === group._id
+                ? "border-indigo-500"
+                : "border-gray-700"
+            }`}
+          >
+            <h3 className="text-2xl font-semibold text-indigo-300 mb-1">
+              {group.name}
+            </h3>
+            <p className="text-sm text-gray-400">Total: ₹{group.totalAmount}</p>
+
+            {/* Member List */}
+            <div className="mt-4">
+              <p className="text-gray-300 mb-1 font-medium">Members:</p>
+              <ul className="text-sm space-y-2">
+                {group.members.map((member, index) => (
+                 <li
+                 key={index}
+                 className="flex justify-between items-center bg-gray-800/70 border border-gray-700 px-4 py-3 rounded-xl shadow hover:shadow-md transition-all"
+               >
+                 <div>
+                   <p className="text-white font-medium">{member.name}</p>
+                   <p className="text-sm text-gray-400">₹{member.payment}</p>
+                 </div>
+               
+                 <div className="flex gap-3 items-center">
+                 <button
+  onClick={() => {
+    setSelectedGroup(group); // optional if you still want to keep track in UI
+    createRazorpayOrder(member.name, group);
+  }}
+  className="text-green-400 hover:text-green-300 text-xs font-semibold hover:underline transition"
+>
+  Razorpay
+</button>
+
+                   <button
+                     onClick={() => {
+                       setSelectedGroup(group);
+                       payWithWallet(member.name);
+                     }}
+                     className="text-blue-400 hover:text-blue-300 text-xs font-semibold hover:underline transition"
+                   >
+                     Wallet
+                   </button>
+                   <FiTrash2
+  className="text-red-500 cursor-pointer hover:text-red-400"
+  onClick={() => {
+    setSelectedGroup(group); // ensure selectedGroup is correctly set
+    // Using setTimeout to ensure the state is updated first
+    setTimeout(() => {
+      // Check if selectedGroup is valid before calling removeUserFromGroup
+      if (selectedGroup && selectedGroup._id) {
+        removeUserFromGroup(member.name);
+      } else {
+        console.error("selectedGroup is not valid:", selectedGroup);
+      }
+    }, 0); // Execute after the state update
+  }}
+/>
+
+                 </div>
+               </li>
+               
+                ))}
+              </ul>
             </div>
 
-            {/* Members Section */}
-            {selectedGroup === group._id && (
-              <div className="mt-4">
-                <div className="flex gap-3">
-                  <input
-                    type="text"
-                    value={newUser}
-                    onChange={(e) => setNewUser(e.target.value)}
-                    placeholder="Add User"
-                    className="p-2 flex-1 border-2 border-gray-600 rounded-lg bg-gray-700 text-gray-200 focus:ring-2 focus:ring-blue-500"
-                  />
-                  <button
-                    onClick={addUserToGroup}
-                    className="px-4 py-2 bg-green-500 text-white rounded-md shadow-md hover:bg-green-600 transition duration-300"
-                  >
-                    <FiUserPlus className="inline-block mr-1" /> Add
-                  </button>
-                </div>
-
-                {/* List Users */}
-                <div className="mt-4">
-                  {group.members.map((user, index) => (
-                    <div key={index} className="flex justify-between items-center bg-gray-800 p-3 rounded-md shadow-sm mb-2">
-                      <span className="text-gray-300">{user.name}</span>
-                      <input
-                        type="number"
-                        value={user.payment}
-                        onChange={(e) => updateUserPayment(group._id, user.name, e.target.value)}
-                        placeholder="Payment"
-                        className="p-2 w-24 border-2 border-gray-600 rounded-md bg-gray-700 text-gray-200 focus:ring-2 focus:ring-blue-500"
-                      />
-                      <button
-                        onClick={() => removeUserFromGroup(group._id, user.name)}
-                        className="text-red-400 hover:text-red-600 transition duration-200"
-                      >
-                        <FiTrash2 className="text-xl" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Payment Split Info */}
-                <div className="mt-4 text-center">
-                  <span className="text-lg font-medium text-gray-300">Amount per person:</span>
-                  <span className="text-lg font-semibold text-gray-100">
-                    ${((amount || 0) / (group.members.length || 1)).toFixed(2)}
-                  </span>
-                </div>
-              </div>
-            )}
+            {/* Add & Split Actions */}
+            <div className="mt-5 flex flex-wrap gap-2">
+              <input
+                type="text"
+                placeholder="Add Member"
+                value={selectedGroup?._id === group._id ? newUser : ""}
+                onChange={(e) => {
+                  setSelectedGroup(group);
+                  setNewUser(e.target.value);
+                }}
+                className="input input-sm input-bordered bg-gray-800 text-white border-indigo-500 rounded-lg"
+              />
+              <button
+                onClick={addUserToGroup}
+                className="btn btn-sm bg-gradient-to-r from-purple-500 to-fuchsia-600 text-white rounded-md hover:scale-105 transition shadow-md"
+              >
+                <FiUserPlus />
+              </button>
+              <button
+  onClick={() => {
+    setSelectedGroup(group); // This will trigger the useEffect to call splitPayments
+  }}
+  className="btn btn-sm bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-md hover:scale-105 transition shadow-md"
+>
+  <FiDollarSign className="mr-1" /> Split
+</button>
+              <button
+                onClick={() => {
+                  setSelectedGroup(group);
+                  viewGroupTransactions();
+                }}
+                className="btn btn-sm bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-md hover:scale-105 transition shadow-md"
+              >
+                Transactions
+              </button>
+            </div>
           </div>
         ))}
-
-        {/* Error Message */}
-        {error && <p className="text-red-500 text-center mt-4">{error}</p>}
-
-        {/* Final Split Payment Button */}
-        <div className="text-center mt-6">
-          <button
-            onClick={() => verifyAndCreateOrder(groups.find((group) => group._id === selectedGroup))}
-            className="px-6 py-3 bg-indigo-600 text-white rounded-lg w-full shadow-lg hover:bg-indigo-700 transition duration-300"
-          >
-            Finalize Payment Split
-          </button>
-        </div>
       </div>
     </div>
   );
