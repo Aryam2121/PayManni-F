@@ -16,25 +16,39 @@ const LoanApplication = () => {
   const [userUpi, setUserUpi] = useState('');
   const { user } = useAuth();
   const userId = user?._id || localStorage.getItem("userId");
+  const authToken = user?.token || localStorage.getItem("paymanni_token");
+
+  const headers = {
+    "Content-Type": "application/json",
+    "Authorization": `Bearer ${authToken}`,
+  };
 
   useEffect(() => {
-    // Assuming you have a /me route or similar to get user profile
     const fetchUser = async () => {
-      const res = await fetch(`https://${import.meta.env.VITE_BACKEND}/api/myaccount/${userId}`, { credentials: "include" });
+      const res = await fetch(`https://${import.meta.env.VITE_BACKEND}/api/myaccount/${userId}`, { 
+        headers, 
+        credentials: "include" 
+      });
       const data = await res.json();
       setUserUpi(data.upiId || "aryamangupta@paymanni");
     };
     fetchUser();
-  }, []);
+  }, [userId]);
+
   useEffect(() => {
-    fetchLoans();
-  }, []);
+    if (userId) {
+      fetchLoans();
+    }
+  }, [userId]);
 
   const fetchLoans = async () => {
     try {
-      const res = await fetch(`https://${import.meta.env.VITE_BACKEND}/api/loans`, { credentials: 'include' });
-      const text = await res.text();
-      const data = JSON.parse(text);
+      const res = await fetch(`https://${import.meta.env.VITE_BACKEND}/api/getAllloans`, {
+        headers,
+        credentials: 'include'
+      });
+      if (!res.ok) throw new Error("Failed to fetch loans");
+      const data = await res.json();
       setLoans(data.loans || []);
     } catch (err) {
       console.error("Error fetching loans:", err);
@@ -44,7 +58,10 @@ const LoanApplication = () => {
   const fetchLoanById = async () => {
     if (!loanId) return;
     try {
-      const res = await fetch(`https://${import.meta.env.VITE_BACKEND}/api/loans/${loanId}`, { credentials: 'include' });
+      const res = await fetch(`https://${import.meta.env.VITE_BACKEND}/api/loans/${loanId}`, {
+        headers,
+        credentials: 'include'
+      });
       const data = await res.json();
       if (res.status === 200) {
         setSelectedLoan(data.loan);
@@ -82,30 +99,51 @@ const LoanApplication = () => {
     e.preventDefault();
     setLoading(true);
     setStatus('');
-
-    if (parseFloat(amount) < 100 || parseFloat(amount) > 700000000) {
+  
+    const parsedAmount = parseFloat(amount);
+    const parsedTerm = parseInt(term);
+  
+    if (parsedAmount < 100 || parsedAmount > 700000000) {
       setStatus("❌ Loan amount must be between ₹100 and ₹700,000,000.");
       setLoading(false);
       return;
     }
-    if (parseInt(term) < 3 || parseInt(term) > 24) {
+  
+    if (parsedTerm < 3 || parsedTerm > 24) {
       setStatus("❌ Loan term must be between 3 and 24 months.");
       setLoading(false);
       return;
     }
-
+  
+    const interestRate = 12;
+    const monthlyInterestRate = interestRate / 12 / 100;
+    const monthlyEMI = (
+      (parsedAmount * monthlyInterestRate * Math.pow(1 + monthlyInterestRate, parsedTerm)) /
+      (Math.pow(1 + monthlyInterestRate, parsedTerm) - 1)
+    ).toFixed(2);
+  
+    const approvalChance = parsedAmount < 100000 ? "High" : parsedAmount < 500000 ? "Medium" : "Low";
+  
     try {
       const res = await fetch(`https://${import.meta.env.VITE_BACKEND}/api/loans/apply`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         credentials: "include",
-        body: JSON.stringify({ amount, term })
+        body: JSON.stringify({
+          amount: parsedAmount,
+          term: parsedTerm,
+          interestRate,
+          monthlyEMI,
+          approvalChance
+        })
       });
+  
       const data = await res.json();
       setLoading(false);
+  
       if (data.success) {
         setStatus("✅ Loan applied successfully!");
-        fetchLoans();
+        fetchLoans(); 
       } else {
         setStatus(data.message || "❌ Something went wrong!");
       }
@@ -114,7 +152,6 @@ const LoanApplication = () => {
       setStatus("❌ Something went wrong! Please try again.");
     }
   };
-
   const handleRepayEMI = async (loanId, amount) => {
     setLoading(true);
     try {
@@ -149,7 +186,7 @@ const LoanApplication = () => {
           const verifyData = await verifyRes.json();
 
           if (verifyData.success) {
-            await fetch(`https://${import.meta.env.VITE_BACKEND}/api/loans/payment/repay`, {
+            await fetch(`https://${import.meta.env.VITE_BACKEND}/api/${loanId}/repay`, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               credentials: "include",
