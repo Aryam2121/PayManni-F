@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import QRCode from "react-qr-code";
 import axios from "axios";
+import { useAuth } from "../context/AuthContext";
 
 const Recharge = () => {
   const [amount, setAmount] = useState("");
@@ -12,16 +13,18 @@ const Recharge = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(true);
   const [transactionHistory, setTransactionHistory] = useState([]);
+  const [paymentId, setPaymentId] = useState(""); // NEW: store payment ID after initiating
   const [userLanguage, setUserLanguage] = useState("English");
   const [rating, setRating] = useState(0);
+  const { user } = useAuth();
 
-  const userId = localStorage.getItem("userId");
+  const userId = user?._id || localStorage.getItem("userId");
 
   useEffect(() => {
     const fetchTransactionHistory = async () => {
       try {
         const response = await axios.get(
-          `https://${import.meta.env.VITE_BACKEND}/api/recharge/${userId}/transactions`
+          `https://${import.meta.env.VITE_BACKEND}/api/recharges/${userId}`
         );
         setTransactionHistory(response.data);
       } catch (error) {
@@ -60,9 +63,13 @@ const Recharge = () => {
         }
       );
 
-      setIsSuccess(true);
       setIsProcessing(false);
+      setPaymentId(response.data.paymentId); // Save payment ID for verification
+      setIsSuccess(true);
+
+      // Add the transaction optimistically
       setTransactionHistory((prev) => [response.data.transaction, ...prev]);
+      
       setAmount("");
       setPromoCode("");
     } catch (error) {
@@ -72,9 +79,41 @@ const Recharge = () => {
     }
   };
 
+  // New: Payment Verification Function
+  const verifyPayment = async () => {
+    if (!paymentId) return;
+
+    setIsProcessing(true);
+    try {
+      const response = await axios.post(
+        `https://${import.meta.env.VITE_BACKEND}/api/verify-payment`,
+        {
+          paymentId,
+          userId,
+        }
+      );
+
+      if (response.data.success) {
+        alert("Payment Verified Successfully!");
+        // Update Transaction History again (optional)
+        const updatedTransactions = await axios.get(
+          `https://${import.meta.env.VITE_BACKEND}/api/recharges/${userId}`
+        );
+        setTransactionHistory(updatedTransactions.data);
+      } else {
+        alert("Payment verification failed. Please try again.");
+      }
+    } catch (error) {
+      console.error("Error verifying payment", error);
+      alert("Error verifying payment. Please try again later.");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   return (
     <div
-      className={`p-8  mx-auto rounded-xl shadow-lg transition-all duration-300 ${
+      className={`p-8 mx-auto rounded-xl shadow-lg transition-all duration-300 ${
         isDarkMode ? "bg-gray-900 text-white" : "bg-white text-gray-900"
       }`}
     >
@@ -110,7 +149,9 @@ const Recharge = () => {
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
         />
-        {!isValid && <p className="text-red-500 text-sm mt-2">Please enter a valid amount.</p>}
+        {!isValid && (
+          <p className="text-red-500 text-sm mt-2">Please enter a valid amount.</p>
+        )}
       </motion.div>
 
       {/* Promo Code Input */}
@@ -147,7 +188,11 @@ const Recharge = () => {
 
       {/* QR Code for Payment */}
       {paymentMethod === "UPI" && (
-        <motion.div className="mt-6 text-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+        <motion.div
+          className="mt-6 text-center"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+        >
           <h3 className="text-xl font-semibold">Scan to Pay (UPI)</h3>
           <QRCode
             className="mt-3 mx-auto p-2 bg-white rounded-lg"
@@ -164,13 +209,26 @@ const Recharge = () => {
         whileTap={{ scale: 0.98 }}
         disabled={isProcessing}
       >
-        {isProcessing ? "Processing..." : isSuccess ? "Recharge Successful!" : "Recharge"}
+        {isProcessing ? "Processing..." : "Recharge"}
       </motion.button>
+
+      {/* Verify Payment Button */}
+      {paymentId && (
+        <motion.button
+          className="mt-4 w-full py-3 rounded-lg shadow-lg font-semibold transition-all text-white bg-green-600 hover:bg-green-700"
+          onClick={verifyPayment}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.98 }}
+          disabled={isProcessing}
+        >
+          {isProcessing ? "Verifying..." : "Verify Payment"}
+        </motion.button>
+      )}
 
       {/* Success Message */}
       {isSuccess && (
         <motion.div className="mt-4 text-green-500 font-semibold text-center">
-          Recharge of ₹{parseFloat(amount).toFixed(2)} was successful!
+          Recharge initiated! Please complete your payment and click Verify.
         </motion.div>
       )}
 

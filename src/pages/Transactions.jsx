@@ -7,7 +7,7 @@ const Transactions = () => {
   const [isDarkMode, setIsDarkMode] = useState(true);
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [expandedTxnId, setExpandedTxnId] = useState(null); // for toggling
+  const [expandedTxnId, setExpandedTxnId] = useState(null); 
 
   const fetchTransactions = async (token) => {
     try {
