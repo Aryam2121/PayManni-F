@@ -26,17 +26,24 @@ const Home = () => {
   useEffect(() => {
     const fetchAccountDetails = async () => {
       try {
+        // Check if user is available from context or localStorage
         const userId = user?._id || localStorage.getItem("userId");
-     
-  
+        
         if (!userId) {
           console.warn("⚠️ No userId found");
+          // Optionally, redirect to login page or handle accordingly
+          navigate("/login");
           return;
         }
   
+        console.log("User from context:", user);
+        console.log("UserId from localStorage:", userId);
+  
+        // Make API call to fetch account details
         const res = await axios.get(
           `https://${import.meta.env.VITE_BACKEND}/api/myaccount/${userId}`
         );
+  
         setAccountDetails(res.data);
         setLoading(false);
       } catch (error) {
@@ -45,8 +52,13 @@ const Home = () => {
       }
     };
   
-    fetchAccountDetails();
-  }, [user]);
+    if (user) {
+      fetchAccountDetails();
+    } else {
+      // Optionally handle the case when the user is not authenticated yet
+      setLoading(false);
+    }
+  }, [user, navigate]);
   
   
   

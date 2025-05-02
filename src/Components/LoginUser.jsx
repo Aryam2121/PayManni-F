@@ -53,16 +53,29 @@ const LoginUser = () => {
           .then((userCredential) => {
             const user = userCredential.user;
 
-            user.getIdToken().then((token) => {
-              const userData = { userId: user.uid, user: { name: user.displayName } }; // Mocked user data
-
-              setResponseMsg("Email login successful");
-              localStorage.setItem("paymanni_token", token);
-              localStorage.setItem("paymanni_user", JSON.stringify(userData.user));
-
-              setTimeout(() => {
-                navigate("/home");
-              }, 1000);
+            user.getIdToken().then(async (token) => {
+              try {
+                const idToken = await user.getIdToken();
+                const res = await axios.post(`https://${import.meta.env.VITE_BACKEND}/api/login`, {
+                  idToken, // Send only the ID token to the backend
+                }, {
+                  headers: {
+                    Authorization: `Bearer ${idToken}`, // Optionally, pass it in Authorization header
+                  },
+                });
+                const userData = res.data; // Assuming { userId, user: { name, email, ... } }
+            
+                setResponseMsg("Email login successful");
+                localStorage.setItem("paymanni_token", token);
+                localStorage.setItem("paymanni_user", JSON.stringify(userData.user));
+                localStorage.setItem("paymanni_userId", userData.userId);
+            
+                setTimeout(() => {
+                  navigate("/home");
+                }, 1000);
+              } catch (apiErr) {
+                setResponseMsg("Backend login failed: " + (apiErr.response?.data?.msg || apiErr.message));
+              }
             });
           })
           .catch((error) => {

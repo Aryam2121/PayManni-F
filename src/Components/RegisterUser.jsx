@@ -7,7 +7,9 @@ import {
   RecaptchaVerifier,
   createUserWithEmailAndPassword,
   signInWithPhoneNumber,
+ 
 } from "firebase/auth";
+import { setUpRecaptcha } from "../firebase";
 import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 const RegisterUser = () => {
   const [formData, setFormData] = useState({
@@ -28,16 +30,19 @@ const RegisterUser = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const setUpRecaptcha = (containerId) => {
-    window.recaptchaVerifier = new RecaptchaVerifier(
-      containerId,
-      {
-        size: "invisible",
-        callback: (response) => console.log("reCAPTCHA solved"),
-      },
-      auth
-    );
-  };
+  // const setUpRecaptcha = (containerId) => {
+  //   if (!window.recaptchaVerifier) {
+  //     window.recaptchaVerifier = new RecaptchaVerifier(
+  //       containerId,
+  //       {
+  //         size: "invisible",
+  //         callback: (response) => console.log("reCAPTCHA solved"),
+  //       },
+  //       auth
+  //     );
+  //   }
+  // };
+  
 
   // 👉 Function to send user data to backend
   const saveUserToBackend = async (userData) => {
@@ -58,7 +63,7 @@ const RegisterUser = () => {
 
     try {
       setLoading(true);
-      const phoneNumber = `+1${formData.phoneNumber}`;
+      const phoneNumber = `+91${formData.phoneNumber}`;
       const appVerifier = window.recaptchaVerifier;
 
       const confirmationResult = await signInWithPhoneNumber(
@@ -72,7 +77,8 @@ const RegisterUser = () => {
         state: {
           confirmationResult,
           phoneNumber,
-          name: formData.name, // pass for backend use
+          name: formData.name,
+          password: formData.password, // optional
         },
       });
     } catch (err) {
@@ -86,37 +92,77 @@ const RegisterUser = () => {
     e.preventDefault();
     setLoading(true);
     setResponseMsg("");
-
+  
     try {
       if (isPhoneRegister) {
-        await handlePhoneVerification(e);
+        // Validate phone number format
+        const phoneNumber = `+91${formData.phoneNumber}`;
+        if (!/^\+91\d{10}$/.test(phoneNumber)) {
+          setResponseMsg("Invalid phone number.");
+          setLoading(false);
+          return;
+        }
+  
+        // Setup recaptcha only once
+        if (!window.recaptchaVerifier) {
+          window.recaptchaVerifier = new RecaptchaVerifier(
+            "recaptcha-container",
+            {
+              size: "invisible",
+              callback: () => console.log("reCAPTCHA Solved"),
+            },
+            auth
+          );
+        }
+  
+        const appVerifier = window.recaptchaVerifier;
+  
+        const confirmationResult = await signInWithPhoneNumber(
+          auth,
+          phoneNumber,
+          appVerifier
+        );
+  
+        setResponseMsg("OTP sent to your phone");
+        navigate("/verify-otp", {
+          state: {
+            confirmationResult,
+            phoneNumber,
+            name: formData.name,
+            password: formData.password,
+          },
+        });
       } else {
+        // Email registration
         if (formData.password !== formData.confirmPassword) {
           setResponseMsg("Passwords do not match!");
           setLoading(false);
           return;
         }
-
+  
         const userCredential = await createUserWithEmailAndPassword(
           auth,
           formData.email,
           formData.password
         );
-
+  
         await saveUserToBackend({
           name: formData.name,
           email: formData.email,
           firebaseUid: userCredential.user.uid,
         });
-
+  
         setResponseMsg("Registration successful!");
         navigate("/login-user");
       }
     } catch (err) {
       setResponseMsg(err.message || "Error occurred");
+      console.error("Register Error:", err);
     }
+  
     setLoading(false);
   };
+  
   const loginWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
     try {
@@ -145,7 +191,7 @@ const RegisterUser = () => {
           Create Account
         </h2>
 
-        <form onSubmit={handleRegister} className="space-y-5">
+        <form onSubmit={isPhoneRegister ? handlePhoneVerification : handleRegister} className="space-y-5">
           <div className="relative">
             <User className="absolute top-3.5 left-3 text-gray-400" size={20} />
             <input
@@ -216,11 +262,13 @@ const RegisterUser = () => {
           )}
 <button
   onClick={loginWithGoogle}
-  className="w-full mt-4 bg-red-600 hover:bg-red-700 text-white font-semibold py-2 rounded-lg shadow-lg transition"
+  disabled={loading}
+  className={`w-full mt-4 bg-red-600 hover:bg-red-700 text-white font-semibold py-2 rounded-lg shadow-lg transition ${
+    loading && "opacity-50 cursor-not-allowed"
+  }`}
 >
   Sign up with Google
 </button>
-
           <button
             type="submit"
             disabled={loading}
@@ -231,6 +279,7 @@ const RegisterUser = () => {
         </form>
 
         <div id="recaptcha-container" className="hidden"></div>
+        
 
         {responseMsg && (
           <p

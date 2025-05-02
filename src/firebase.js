@@ -7,7 +7,8 @@ import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   GoogleAuthProvider,
-  signInWithPopup
+  signInWithPopup,
+  signInWithCredential 
 } from "firebase/auth";
 
 // Firebase configuration
@@ -28,6 +29,7 @@ const auth = getAuth(firebaseApp);
 // Function to set up reCAPTCHA
 const setUpRecaptcha = (containerId) => {
   // Clear the previous reCAPTCHA if it exists
+  
   if (window.recaptchaVerifier) {
     window.recaptchaVerifier.clear();
   }
@@ -73,8 +75,8 @@ const sendOtp = (phoneNumber, containerId) => {
 const verifyOtp = (verificationId, otp) => {
   const credential = PhoneAuthProvider.credential(verificationId, otp);
 
-  return auth.signInWithCredential(credential)
-    .then((userCredential) => {
+  return signInWithCredential(auth, credential)
+  .then((userCredential) => {
       console.log("Phone number authenticated successfully:", userCredential.user);
       return userCredential.user;
     })
@@ -130,6 +132,7 @@ const loginWithGoogle = () => {
 };
 
 export {
+  setUpRecaptcha,
   firebaseApp,
   auth,
   sendOtp,
