@@ -83,7 +83,7 @@ import TrainBooking from "./pages/TrainBooking";
 import FlightBooking from "./pages/FlightBooking";
 import LoanApplication from "./pages/LoanApp";
 import BillPaymentReminder from "./pages/BillPaymentRem";
-
+import KycForm from "./Components/KYCForm";
 import Movies from "./Components/Movies";
 import BookMovie from "./Components/BookMovie";
 import LocationServices from "./Components/LocationServices";
@@ -104,6 +104,7 @@ import LoginUser from "./Components/LoginUser";
 import NotFound from "./pages/Notfound"; // Create this page
 import EnhancedSettingsPage from "./Components/Settings";
 import VerifyOtp from "./Components/VerifyOtp";
+import KYCAdminPanel from "./Components/KYCAdminPanel";
 // Auth check
 const isAuthenticated = () => !!localStorage.getItem("paymanni_user");
 
@@ -144,6 +145,8 @@ function App() {
           <Route path="/movies/book/:movieId" element={<BookMovie />} />
 
           {/* Protected Routes */}
+          <Route path="/kyc-admin" element={<ProtectedRoute><KYCAdminPanel /></ProtectedRoute>} />
+          <Route path="/kyc-form" element={<ProtectedRoute><KycForm /></ProtectedRoute>} />
           <Route path="/verify-otp" element={<ProtectedRoute><VerifyOtp/></ProtectedRoute>}/>
           <Route path="/settings" element={<ProtectedRoute><EnhancedSettingsPage/></ProtectedRoute>}/>
           <Route path="/home" element={<ProtectedRoute><Home /></ProtectedRoute>} />
