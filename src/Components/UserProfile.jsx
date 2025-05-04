@@ -6,7 +6,9 @@ import { QRCodeCanvas } from "qrcode.react";
 import axios from "axios";
 import { useAuth } from "../context/AuthContext";
 import boy from "../assets/boy.png"
+
 import { useNavigate } from "react-router-dom";
+
 
 const UserProfile = () => {
   const navigate = useNavigate();
@@ -32,7 +34,19 @@ const UserProfile = () => {
   const { user } = useAuth();
 
   const userId = user?._id || localStorage.getItem("userId");
-
+  const authToken = user?.token || localStorage.getItem("paymanni_token");
+  const [kycs, setKycs] = useState([]);
+  useEffect(() => {
+    axios
+      .get(`https://${import.meta.env.VITE_BACKEND}/api/admin/all`, {
+        headers: { Authorization: `Bearer ${authToken}` },
+      })
+      .then((res) => {
+        if (Array.isArray(res.data)) setKycs(res.data);
+        else setKycs([]);
+      })
+      .catch(() => setKycs([]));
+  }, [authToken]);
   useEffect(() => {
     const fetchUserData = async () => {
       try {
@@ -98,13 +112,25 @@ const UserProfile = () => {
           <p className="text-lg font-medium">Pending Payments</p>
           <p className="text-xl font-bold">$50</p>
         </div>
+        <div>
+      {kycs.map((kyc) => (
         <div
-  className="bg-red-100 p-4 rounded-lg shadow text-center text-black cursor-pointer hover:bg-red-200 transition duration-300"
-  onClick={() => navigate("/kyc-form")} // <-- Replace with actual route
->
-  <p className="text-lg font-medium">KYC Status</p>
-  <p className="text-xl font-bold">{kycProgress}%</p>
-</div>
+          key={kyc._id}
+          className={`p-4 rounded-lg shadow text-center cursor-pointer transition duration-300 ${
+            kyc.status === "Verified"
+              ? "bg-green-100 text-green-800 hover:bg-green-200"
+              : kyc.status === "Rejected"
+              ? "bg-red-100 text-red-800 hover:bg-red-200"
+              : "bg-yellow-100 text-yellow-800 hover:bg-yellow-200"
+          }`}
+          onClick={() => navigate(`/kyc-form/${kyc._id}`)} // Navigate to individual KYC form
+        >
+          <p className="text-lg font-medium">KYC Status</p>
+          <p className="text-xl font-bold">{kyc.status}</p>
+          {/* Here you can use `kyc.status` to show the dynamic KYC status */}
+        </div>
+      ))}
+    </div>
 
       </div>
     </div>

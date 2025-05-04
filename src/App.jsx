@@ -146,7 +146,7 @@ function App() {
 
           {/* Protected Routes */}
           <Route path="/kyc-admin" element={<ProtectedRoute><KYCAdminPanel /></ProtectedRoute>} />
-          <Route path="/kyc-form" element={<ProtectedRoute><KycForm /></ProtectedRoute>} />
+          <Route path="/kyc-form/:id" element={<ProtectedRoute><KycForm /></ProtectedRoute>} />
           <Route path="/verify-otp" element={<ProtectedRoute><VerifyOtp/></ProtectedRoute>}/>
           <Route path="/settings" element={<ProtectedRoute><EnhancedSettingsPage/></ProtectedRoute>}/>
           <Route path="/home" element={<ProtectedRoute><Home /></ProtectedRoute>} />
