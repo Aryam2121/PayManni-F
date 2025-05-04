@@ -6,8 +6,11 @@ import { QRCodeCanvas } from "qrcode.react";
 import axios from "axios";
 import { useAuth } from "../context/AuthContext";
 import boy from "../assets/boy.png"
+import { useNavigate } from "react-router-dom";
 
 const UserProfile = () => {
+  const navigate = useNavigate();
+
   const [profile, setProfile] = useState({
     name: "",
     phone: "",
@@ -95,10 +98,14 @@ const UserProfile = () => {
           <p className="text-lg font-medium">Pending Payments</p>
           <p className="text-xl font-bold">$50</p>
         </div>
-        <div className="bg-red-100 p-4 rounded-lg shadow text-center text-black">
-          <p className="text-lg font-medium">KYC Status</p>
-          <p className="text-xl font-bold">{kycProgress}%</p>
-        </div>
+        <div
+  className="bg-red-100 p-4 rounded-lg shadow text-center text-black cursor-pointer hover:bg-red-200 transition duration-300"
+  onClick={() => navigate("/kyc-form")} // <-- Replace with actual route
+>
+  <p className="text-lg font-medium">KYC Status</p>
+  <p className="text-xl font-bold">{kycProgress}%</p>
+</div>
+
       </div>
     </div>
   );

@@ -47,92 +47,101 @@ export default function KYCForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className=" p-8 bg-gray-900 shadow-lg  text-white">
-      <h2 className="text-3xl font-semibold mb-8 text-center">KYC Verification</h2>
-      
-      <div className="space-y-6">
-        {/* Full Name Input */}
-        <div>
-          <label htmlFor="fullName" className="block text-sm mb-1">Full Name</label>
-          <input 
-            name="fullName" 
-            onChange={handleChange} 
-            value={form.fullName} 
-            placeholder="Enter your full name" 
-            className="w-full p-4 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500" 
-          />
-        </div>
+    <form
+  onSubmit={handleSubmit}
+  className=" p-8 bg-gray-900 shadow-2xl  text-white"
+>
+  <h2 className="text-4xl font-bold mb-8 text-center tracking-wide">KYC Verification</h2>
 
-        {/* Date of Birth Input */}
-        <div>
-          <label htmlFor="dob" className="block text-sm mb-1">Date of Birth</label>
-          <input 
-            name="dob" 
-            onChange={handleChange} 
-            value={form.dob} 
-            placeholder="Enter your Date of Birth" 
-            className="w-full p-4 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div className="flex flex-col">
+      <label htmlFor="fullName" className="mb-1 text-sm font-medium">
+        Full Name
+      </label>
+      <input
+        name="fullName"
+        onChange={handleChange}
+        value={form.fullName}
+        placeholder="e.g. Aryaman Gupta"
+        className="p-3 bg-gray-800 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400"
+      />
+    </div>
 
-        {/* PAN Number Input */}
-        <div>
-          <label htmlFor="panNumber" className="block text-sm mb-1">PAN Number</label>
-          <input 
-            name="panNumber" 
-            onChange={handleChange} 
-            value={form.panNumber} 
-            placeholder="Enter your PAN number" 
-            className="w-full p-4 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
+    <div className="flex flex-col">
+      <label htmlFor="dob" className="mb-1 text-sm font-medium">
+        Date of Birth
+      </label>
+      <input
+        type="date"
+        name="dob"
+        onChange={handleChange}
+        value={form.dob}
+        className="p-3 bg-gray-800 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+      />
+    </div>
 
-        {/* Address Input */}
-        <div>
-          <label htmlFor="address" className="block text-sm mb-1">Address</label>
-          <input 
-            name="address" 
-            onChange={handleChange} 
-            value={form.address} 
-            placeholder="Enter your address" 
-            className="w-full p-4 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
+    <div className="flex flex-col">
+      <label htmlFor="panNumber" className="mb-1 text-sm font-medium">
+        PAN Number
+      </label>
+      <input
+        name="panNumber"
+        onChange={handleChange}
+        value={form.panNumber}
+        placeholder="ABCDE1234F"
+        className="p-3 bg-gray-800 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400 uppercase"
+      />
+    </div>
 
-        {/* ID Image Input */}
-        <div>
-          <label htmlFor="idImage" className="block text-sm mb-1">Upload ID Proof (e.g., Aadhar, Passport)</label>
-          <input 
-            type="file" 
-            name="idImage" 
-            onChange={handleChange} 
-            className="w-full p-4 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <p className="text-xs text-gray-400 mt-2">Accepted formats: JPG, PNG, PDF</p>
-        </div>
+    <div className="flex flex-col">
+      <label htmlFor="address" className="mb-1 text-sm font-medium">
+        Address
+      </label>
+      <input
+        name="address"
+        onChange={handleChange}
+        value={form.address}
+        placeholder="House no, Street, City"
+        className="p-3 bg-gray-800 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400"
+      />
+    </div>
 
-        {/* Selfie Input */}
-        <div>
-          <label htmlFor="selfie" className="block text-sm mb-1">Upload Selfie</label>
-          <input 
-            type="file" 
-            name="selfie" 
-            onChange={handleChange} 
-            className="w-full p-4 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <p className="text-xs text-gray-400 mt-2">Please upload a recent selfie</p>
-        </div>
+    <div className="flex flex-col">
+      <label htmlFor="idImage" className="mb-1 text-sm font-medium">
+        Upload ID Proof
+      </label>
+      <input
+        type="file"
+        name="idImage"
+        onChange={handleChange}
+        accept=".jpg,.png,.pdf"
+        className="p-2 bg-gray-800 border border-gray-700 rounded-lg text-white"
+      />
+      <span className="text-xs text-gray-400 mt-1">Accepted: JPG, PNG, PDF</span>
+    </div>
 
-        {/* Submit Button */}
-        <div>
-          <button 
-            type="submit" 
-            className="w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition ease-in-out duration-300"
-          >
-            Submit KYC
-          </button>
-        </div>
-      </div>
-    </form>
+    <div className="flex flex-col">
+      <label htmlFor="selfie" className="mb-1 text-sm font-medium">
+        Upload Selfie
+      </label>
+      <input
+        type="file"
+        name="selfie"
+        onChange={handleChange}
+        accept="image/*"
+        className="p-2 bg-gray-800 border border-gray-700 rounded-lg text-white"
+      />
+      <span className="text-xs text-gray-400 mt-1">Upload a recent clear selfie</span>
+    </div>
+  </div>
+
+  <button
+    type="submit"
+    className="mt-8 w-full py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold text-lg rounded-lg hover:opacity-90 transition-all duration-300"
+  >
+    Submit KYC
+  </button>
+</form>
+
   );
 }
