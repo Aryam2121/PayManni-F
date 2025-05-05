@@ -1,18 +1,21 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import axios from "axios";
+import { useAuth } from "../context/AuthContext";
 
 const rows = ["A", "B", "C", "D", "E"];
 const seatsPerRow = 8;
 
 export default function BookMovie() {
+  const { user } = useAuth();
+
   const { movieId } = useParams();
   const navigate = useNavigate();
   const [movie, setMovie] = useState(null);
   const [selectedSeats, setSelectedSeats] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  const userId = "6636e20f91e57aa51fce3005"; // Replace with actual user ID logic
+  const userId = user?._id || localStorage.getItem("userId");
 
   useEffect(() => {
     axios
