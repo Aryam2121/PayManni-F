@@ -152,7 +152,7 @@ const LoanApplication = () => {
       setStatus("❌ Something went wrong! Please try again.");
     }
   };
-  const handleRepayEMI = async (loanId, amount) => {
+  const handleRepayEMI = async (loanId, amount, userUpi) => {
     setLoading(true);
     try {
       const res = await fetch(`https://${import.meta.env.VITE_BACKEND}/api/loans/payment/order`, {
