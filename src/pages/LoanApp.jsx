@@ -154,25 +154,43 @@ const LoanApplication = () => {
   };
   const handleRepayEMI = async (loanId, amount, userUpi) => {
     setLoading(true);
+  
+    // ✅ Step 1: Sanity check
+    if (!amount || !userUpi) {
+      console.error("Missing amount or userUpi", { amount, userUpi });
+      setStatus("❌ Amount or UPI ID is missing!");
+      setLoading(false);
+      return;
+    }
+  
     try {
+      // ✅ Step 2: Create Razorpay order
       const res = await fetch(`https://${import.meta.env.VITE_BACKEND}/api/loans/payment/order`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${authToken}`,
+        },
         credentials: "include",
-        body: JSON.stringify({ loanId, amount })
+        body: JSON.stringify({ loanId, amount }),
       });
-
+  
       const data = await res.json();
       if (!data.success) throw new Error("Payment order failed");
-
+  
+      // ✅ Step 3: Log Razorpay Key
+      console.log("Razorpay Key:", import.meta.env.VITE_RAZORPAY_KEY_ID);
+  
+      // ✅ Step 4: Setup Razorpay options
       const options = {
-        key: import.meta.env.VITE_RAZORPAY_KEY,
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID,
         amount: data.order.amount,
         currency: "INR",
         name: "PayManni Loan Repayment",
         description: "EMI Payment",
         order_id: data.order.id,
         handler: async (response) => {
+          // ✅ Step 5: Verify Payment
           const verifyRes = await fetch(`https://${import.meta.env.VITE_BACKEND}/api/loans/payment/verify`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -181,39 +199,60 @@ const LoanApplication = () => {
               razorpay_order_id: response.razorpay_order_id,
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_signature: response.razorpay_signature,
-            })
+            }),
           });
+  
           const verifyData = await verifyRes.json();
-
+  
           if (verifyData.success) {
-            await fetch(`https://${import.meta.env.VITE_BACKEND}/api/${loanId}/repay`, {
+            // ✅ Step 6: Repay EMI
+            console.log("Sending repay request with:", {
+              loanId,
+              amount,
+              paymentId: response.razorpay_payment_id,
+              userUpi,
+            });
+  
+            const repayRes = await fetch(`https://${import.meta.env.VITE_BACKEND}/api/${loanId}/repay`, {
               method: "POST",
-              headers: { "Content-Type": "application/json" },
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${authToken}`,
+              },
               credentials: "include",
               body: JSON.stringify({
                 loanId,
                 amount,
                 paymentId: response.razorpay_payment_id,
-                userUpi
-              })
+                userUpi,
+              }),
             });
-            fetchLoans();
-            setStatus("✅ EMI Payment Successful!");
+  
+            const repayData = await repayRes.json();
+            if (repayData.success) {
+              fetchLoans();
+              setStatus("✅ EMI Payment Successful!");
+            } else {
+              setStatus("❌ EMI Repayment Failed!");
+            }
           } else {
             setStatus("❌ Payment verification failed!");
           }
           setLoading(false);
         },
-        theme: { color: "#6366F1" }
+        theme: { color: "#6366F1" },
       };
-
+  
+      // ✅ Step 7: Open Razorpay modal
       const rzp = new window.Razorpay(options);
       rzp.open();
     } catch (error) {
-      setLoading(false);
+      console.error("Payment Error:", error);
       setStatus("❌ Error during payment");
+      setLoading(false);
     }
   };
+  
   return (
     <div className="p-6  shadow-2xl bg-gray-900 text-white transition-all" aria-live="polite">
       <motion.div className="flex justify-between mb-4 items-center">

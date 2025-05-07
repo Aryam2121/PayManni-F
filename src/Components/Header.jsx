@@ -274,13 +274,13 @@ const Header = () => {
 
       {/* Actions */}
       <div className="flex items-center space-x-5">
-        {/* Notifications */}
+        {/* Notifications
         <motion.div className="relative cursor-pointer" whileHover={{ scale: 1.1 }}>
           <FaBell className="text-lg" />
           <span className="absolute -top-1 -right-2 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5">
             3
           </span>
-        </motion.div>
+        </motion.div> */}
 
         {/* Profile Dropdown */}
         <div className="relative">
