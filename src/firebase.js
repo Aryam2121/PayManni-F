@@ -28,47 +28,53 @@ const auth = getAuth(firebaseApp);
 
 // Function to set up reCAPTCHA
 const setUpRecaptcha = (containerId) => {
-  // Clear the previous reCAPTCHA if it exists
-  
   if (window.recaptchaVerifier) {
     window.recaptchaVerifier.clear();
   }
 
-  // Initialize the new reCAPTCHA verifier
-  window.recaptchaVerifier = new RecaptchaVerifier(containerId, {
-    size: "invisible", // or "normal" for testing
-    callback: (response) => {
-      console.log("reCAPTCHA solved successfully.");
+  window.recaptchaVerifier = new RecaptchaVerifier(
+    containerId,
+    {
+      size: "invisible",
+      callback: (response) => {
+        console.log("reCAPTCHA solved successfully.");
+      },
+      'expired-callback': () => {
+        console.log("reCAPTCHA expired. Please try again.");
+      },
     },
-    'expired-callback': () => {
-      console.log("reCAPTCHA expired. Please try again.");
-    },
-  }, auth);
+    auth
+  );
+
+  // ✅ Must return this render Promise
+  return window.recaptchaVerifier.render().then((widgetId) => {
+    window.recaptchaWidgetId = widgetId;
+  });
 };
 
 
 // Function to send OTP
-const sendOtp = (phoneNumber, containerId) => {
-  setUpRecaptcha(containerId);
-  const appVerifier = window.recaptchaVerifier;
+const sendOtp = async (phoneNumber, containerId) => {
+  try {
+    await setUpRecaptcha(containerId); // 🛠️ Wait for reCAPTCHA to fully render
+    const appVerifier = window.recaptchaVerifier;
 
-  return signInWithPhoneNumber(auth, phoneNumber, appVerifier)
-    .then((confirmationResult) => {
-      console.log("OTP sent to:", phoneNumber);
-      return confirmationResult;
-    })
-    .catch((error) => {
-      console.error("Error during OTP send:", error);
-      if (error.code === 'auth/too-many-requests') {
-        alert('Too many attempts. Please try again later.');
-      } else if (error.code === 'auth/invalid-phone-number') {
-        alert('Invalid phone number. Please check the number format.');
-      } else {
-        alert('Error sending OTP. Please try again.');
-      }
-      throw new Error("Error during OTP send");
-    });
+    const confirmationResult = await signInWithPhoneNumber(auth, phoneNumber, appVerifier);
+    console.log("OTP sent to:", phoneNumber);
+    return confirmationResult;
+  } catch (error) {
+    console.error("Error during OTP send:", error);
+    if (error.code === 'auth/too-many-requests') {
+      alert('Too many attempts. Please try again later.');
+    } else if (error.code === 'auth/invalid-phone-number') {
+      alert('Invalid phone number. Please check the number format.');
+    } else {
+      alert('Error sending OTP. Please try again.');
+    }
+    throw new Error("Error during OTP send");
+  }
 };
+
 
 
 // Function to verify OTP
