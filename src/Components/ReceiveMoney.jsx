@@ -18,7 +18,7 @@ import {
 } from "react-icons/fa";
 import { MdContentCopy } from "react-icons/md";
 import { HiLightningBolt } from "react-icons/hi";
-import { getApiBase, getAuthHeaders, getStoredUser, getUserId, getUserName, getUserUpi, apiUrl } from "../utils/authStorage";
+import { getApiBase, getAuthHeaders, getStoredUser, getUserId, getUserName, getUserUpi, apiUrl, updateStoredUser } from "../utils/authStorage";
 import PageShell from "./layout/PageShell";
 
 const ReceiveMoney = () => {
@@ -43,27 +43,34 @@ const ReceiveMoney = () => {
   }, [userUpi, amount, note]);
 
   const fetchUserData = async () => {
+    const userId = getUserId();
+    setUserName(getUserName());
+    setUserUpi(getUserUpi());
+
+    if (!userId) return;
+
     try {
-      const user = getStoredUser();
-      const userId = getUserId();
-
-      setUserName(getUserName());
-      setUserUpi(getUserUpi() || "user@paymanni");
-
-      if (userId) {
-        const balanceRes = await axios.get(
-          apiUrl(`/api/myaccount/${userId}`),
-          { headers: getAuthHeaders() }
-        );
-        setBalance(balanceRes.data.balance ?? 0);
-      } else if (user?.balance) {
-        setBalance(user.balance);
-      }
+      const balanceRes = await axios.get(apiUrl(`/api/myaccount/${userId}`), {
+        headers: getAuthHeaders(),
+      });
+      const data = balanceRes.data;
+      setBalance(data.balance ?? 0);
+      setUserName(data.name || getUserName());
+      setUserUpi(data.upiId || data.upi || getUserUpi());
+      updateStoredUser({
+        id: data.id || userId,
+        _id: data.id || userId,
+        name: data.name,
+        email: data.email,
+        upi: data.upiId,
+        upiId: data.upiId,
+        balance: data.balance,
+      });
     } catch (error) {
       console.error("Data fetch error:", error);
       const user = getStoredUser();
-      setUserName(getUserName());
-      setUserUpi(getUserUpi() || "user@paymanni");
+      setUserName(user?.name || getUserName());
+      setUserUpi(getUserUpi() || "");
       setBalance(user?.balance ?? 0);
     }
   };

@@ -34,6 +34,24 @@ export function getAuthHeaders() {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
+export function updateStoredUser(patch) {
+  const current = getStoredUser() || {};
+  const merged = {
+    ...current,
+    ...patch,
+    id: patch.id || patch._id || current.id || current._id,
+    _id: patch._id || patch.id || current._id || current.id,
+    upi: patch.upi || patch.upiId || current.upi || current.upiId,
+    upiId: patch.upiId || patch.upi || current.upiId || current.upi,
+  };
+  localStorage.setItem(USER_KEY, JSON.stringify(merged));
+  localStorage.setItem("user", JSON.stringify(merged));
+  if (merged.id || merged._id) {
+    localStorage.setItem(USER_ID_KEY, merged.id || merged._id);
+  }
+  return merged;
+}
+
 export function setAuthSession({ token, user }) {
   if (token) {
     localStorage.setItem(TOKEN_KEY, token);

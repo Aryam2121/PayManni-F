@@ -11,7 +11,8 @@ import { firebaseApp } from "../firebase";
 import AuthLayout from "./layout/AuthLayout";
 import { useTheme } from "../context/ThemeContext";
 import { useAuth } from "../context/AuthContext";
-import { setAuthSession, getApiBase } from "../utils/authStorage";
+import { setAuthSession, getApiBase, apiUrl, updateStoredUser } from "../utils/authStorage";
+import { normalizeIndianPhone, isValidIndianPhone } from "../utils/phone";
 
 const LoginUserNew = () => {
   const navigate = useNavigate();
@@ -41,17 +42,27 @@ const LoginUserNew = () => {
       return;
     }
 
+    if (loginMethod === "phone" && !isValidIndianPhone(phoneOrEmail)) {
+      toast.error("Please enter a valid 10-digit Indian mobile number");
+      return;
+    }
+
     setLoading(true);
     try {
       const payload =
         loginMethod === "phone"
-          ? { phoneNumber: phoneOrEmail.startsWith("+") ? phoneOrEmail : `+91${phoneOrEmail}` }
-          : { email: phoneOrEmail };
+          ? { phoneNumber: normalizeIndianPhone(phoneOrEmail) }
+          : { email: phoneOrEmail.trim() };
 
       const response = await axios.post(
         `${getApiBase()}/api/auth/send-otp`,
         payload
       );
+
+      if (response.data.smsUnavailable) {
+        toast.warning("Phone SMS is not configured on the server. Please use the Email tab.");
+        return;
+      }
 
       if (response.data.message?.toLowerCase().includes("otp sent")) {
         toast.success(`OTP sent to ${loginMethod === "phone" ? "your phone" : "your email"}!`);
@@ -111,7 +122,7 @@ const LoginUserNew = () => {
     try {
       const payload =
         loginMethod === "phone"
-          ? { phoneNumber: phoneOrEmail.startsWith("+") ? phoneOrEmail : `+91${phoneOrEmail}`, otp: otpValue }
+          ? { phoneNumber: normalizeIndianPhone(phoneOrEmail), otp: otpValue }
           : { email: phoneOrEmail, otp: otpValue };
 
       const response = await axios.post(
@@ -145,15 +156,21 @@ const LoginUserNew = () => {
     const provider = new GoogleAuthProvider();
     try {
       const result = await signInWithPopup(auth, provider);
-      const user = result.user;
-      const token = await user.getIdToken();
-      const userData = { id: user.uid, _id: user.uid, name: user.displayName, email: user.email };
-      setAuthSession({ token, user: userData });
-      setUser(userData);
-      toast.success("Google login successful!");
-      setTimeout(() => navigate("/home"), 1000);
-    } catch {
-      toast.error("Google login failed");
+      const idToken = await result.user.getIdToken();
+
+      const response = await axios.post(apiUrl("/api/auth/google-auth"), { token: idToken });
+
+      if (response.data.message === "Google auth successful.") {
+        const { token, user } = response.data;
+        setAuthSession({ token, user });
+        setUser({ ...user, id: user.id || user._id, _id: user._id || user.id });
+        toast.success("Google login successful!");
+        setTimeout(() => navigate("/home"), 1000);
+      } else {
+        toast.error(response.data.message || "Google login failed");
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Google login failed");
     } finally {
       setLoading(false);
     }

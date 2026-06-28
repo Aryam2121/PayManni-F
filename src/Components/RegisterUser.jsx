@@ -1,4 +1,6 @@
-import { apiUrl, getAuthHeaders, getUserId } from "../utils/authStorage";
+import { apiUrl, setAuthSession } from "../utils/authStorage";
+import { normalizeIndianPhone } from "../utils/phone";
+import { useAuth } from "../context/AuthContext";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -39,6 +41,7 @@ import { useTheme } from "../context/ThemeContext";
 
 const RegisterUser = () => {
   const navigate = useNavigate();
+  const { setUser } = useAuth();
   const auth = getAuth(firebaseApp);
 
   // Enhanced State Management
@@ -58,7 +61,7 @@ const RegisterUser = () => {
   const [registrationMethod, setRegistrationMethod] = useState("email");
   const [step, setStep] = useState(1);
   const [otp, setOtp] = useState("");
-  const [confirmationResult, setConfirmationResult] = useState(null);
+  const [phoneE164, setPhoneE164] = useState("");
   const { darkMode } = useTheme();
   const [passwordStrength, setPasswordStrength] = useState(0);
   const [emailVerificationSent, setEmailVerificationSent] = useState(false);
@@ -112,75 +115,87 @@ const RegisterUser = () => {
   };
 
   const handlePhoneRegistration = async () => {
+    if (!formData.name.trim()) {
+      toast.error("Please enter your name");
+      return;
+    }
+
+    const normalized = normalizeIndianPhone(formData.phoneNumber);
+    if (!normalized) {
+      toast.error("Please enter a valid 10-digit phone number");
+      return;
+    }
+
     try {
       setLoading(true);
-      
-      // Validate phone number
-      const phoneNumber = `+91${formData.phoneNumber}`;
-      if (!/^\\+91\\d{10}$/.test(phoneNumber)) {
-        toast.error("Please enter a valid 10-digit phone number");
-        setLoading(false);
+      setPhoneE164(normalized);
+
+      const response = await axios.post(apiUrl("/api/auth/send-otp"), {
+        phoneNumber: normalized,
+      });
+
+      if (response.data.smsUnavailable) {
+        toast.warning("Phone SMS is not configured. Please register with Email instead.");
         return;
       }
 
-      // Setup reCAPTCHA
-      if (!window.recaptchaVerifier) {
-        window.recaptchaVerifier = new RecaptchaVerifier(
-          "recaptcha-container",
-          {
-            size: "invisible",
-            callback: () => console.log("reCAPTCHA Solved"),
-          },
-          auth
-        );
+      if (response.data.devOtp) {
+        setOtp(String(response.data.devOtp));
+        toast.info(`Dev OTP: ${response.data.devOtp}`, { autoClose: 30000 });
       }
 
-      const appVerifier = window.recaptchaVerifier;
-      const confirmationResult = await signInWithPhoneNumber(
-        auth,
-        phoneNumber,
-        appVerifier
-      );
-
-      setConfirmationResult(confirmationResult);
       setStep(2);
-      toast.success("OTP sent to your phone number! 📱");
+      toast.success("OTP sent to your phone!");
     } catch (error) {
       console.error("Phone registration error:", error);
-      toast.error("Failed to send OTP. Please try again.");
+      toast.error(error.response?.data?.message || "Failed to send OTP. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
   const verifyOTP = async () => {
+    const otpValue = otp.replace(/\D/g, "");
+    if (otpValue.length !== 6) {
+      toast.error("Please enter the 6-digit OTP");
+      return;
+    }
+
     try {
       setLoading(true);
-      
-      if (!confirmationResult) {
-        toast.error("Please request OTP first");
-        return;
-      }
 
-      const userCredential = await confirmationResult.confirm(otp);
-      const user = userCredential.user;
-
-      // Save user to backend
-      await saveUserToBackend({
-        name: formData.name,
-        phoneNumber: formData.phoneNumber,
-        firebaseUid: user.uid,
+      const response = await axios.post(apiUrl("/api/auth/signup"), {
+        name: formData.name.trim(),
+        phoneNumber: phoneE164 || normalizeIndianPhone(formData.phoneNumber),
+        otp: otpValue,
       });
 
-      setStep(3);
-      toast.success("Phone number verified successfully! 🎉");
-      
-      setTimeout(() => {
-        navigate("/login-user");
-      }, 2000);
+      if (response.data.message === "User registered successfully.") {
+        const { token, user } = response.data;
+        setAuthSession({
+          token,
+          user: {
+            ...user,
+            id: user.id || user._id,
+            _id: user._id || user.id,
+            phoneNumber: phoneE164,
+          },
+        });
+        setUser({
+          ...user,
+          id: user.id || user._id,
+          _id: user._id || user.id,
+          phoneNumber: phoneE164,
+        });
+        setStep(3);
+        toast.success("Phone verified! Welcome to PayManni!");
+        setTimeout(() => navigate("/home"), 1500);
+      } else {
+        toast.error(response.data.message || "Registration failed");
+      }
     } catch (error) {
       console.error("OTP verification error:", error);
-      toast.error("Invalid OTP. Please try again.");
+      toast.error(error.response?.data?.message || "Invalid OTP. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -649,7 +664,7 @@ const RegisterUser = () => {
                 <input
                   type="text"
                   value={otp}
-                  onChange={(e) => setOtp(e.target.value)}
+                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
                   placeholder="Enter 6-digit OTP"
                   maxLength="6"
                   className={`w-full text-center text-2xl py-4 rounded-xl border-2 ${
@@ -680,7 +695,7 @@ const RegisterUser = () => {
 
               <motion.button
                 onClick={verifyOTP}
-                disabled={loading || otp.length < 6}
+                disabled={loading || otp.replace(/\D/g, "").length < 6}
                 className="w-full bg-gradient-to-r from-purple-500 to-blue-600 text-white py-4 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50"
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
