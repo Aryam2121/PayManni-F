@@ -1,3 +1,4 @@
+import { apiUrl, getAuthHeaders, getUserId } from "../utils/authStorage";
 import React, { useState } from "react";
 import { FaSpinner } from "react-icons/fa";
 import { Link } from "react-router-dom";
@@ -19,7 +20,7 @@ const SignupPage = () => {
 
   const handleGoogleLogin = async (response) => {
     try {
-      const res = await axios.post(`https://${import.meta.env.VITE_BACKEND}/api/auth/google`, {
+      const res = await axios.post(apiUrl(`/api/auth/google`), {
         token: response.credential,
       });
       localStorage.setItem("authToken", res.data.token);
@@ -36,7 +37,7 @@ const SignupPage = () => {
       return;
     }
     try {
-      const res = await axios.post(`https://${import.meta.env.VITE_BACKEND}/api/auth/send-otp`, { phoneNumber });
+      const res = await axios.post(apiUrl(`/api/auth/send-otp`), { phoneNumber });
       if (res.data.success) {
         setIsOtpSent(true);
         setError("");
@@ -68,7 +69,7 @@ const SignupPage = () => {
         ? { phoneNumber, otp }
         : { email, password };
 
-      const res = await axios.post(`https://${import.meta.env.VITE_BACKEND}/api/auth/signup`, signupData);
+      const res = await axios.post(apiUrl(`/api/auth/signup`), signupData);
       alert("Signup Successful!");
       localStorage.setItem("authToken", res.data.token);
     } catch (err) {

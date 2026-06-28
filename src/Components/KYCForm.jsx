@@ -1,3 +1,4 @@
+import { apiUrl, getAuthHeaders, getUserId } from "../utils/authStorage";
 import { useState } from "react";
 import axios from "axios";
 import { useAuth } from "../context/AuthContext";
@@ -34,7 +35,7 @@ export default function KYCForm() {
     formData.append("selfie", form.selfie);
 
     try {
-      await axios.post(`https://${import.meta.env.VITE_BACKEND}/api/submit`, formData, {
+      await axios.post(apiUrl(`/api/submit`), formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
           Authorization: `Bearer ${authToken}`

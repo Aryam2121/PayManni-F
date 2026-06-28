@@ -1,3 +1,4 @@
+import { apiUrl, getAuthHeaders, getUserId } from "../utils/authStorage";
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { useAuth } from "../context/AuthContext";
@@ -10,7 +11,7 @@ export default function KYCAdminPanel() {
 
   useEffect(() => {
     axios
-      .get(`https://${import.meta.env.VITE_BACKEND}/api/admin/all`, {
+      .get(apiUrl(`/api/admin/all`), {
         headers: { Authorization: `Bearer ${authToken}` },
       })
       .then((res) => {
@@ -22,7 +23,7 @@ export default function KYCAdminPanel() {
 
   const updateStatus = async (id, status) => {
     await axios.patch(
-      `https://${import.meta.env.VITE_BACKEND}/api/admin/status/${id}`,
+      apiUrl(`/api/admin/status/${id}`),
       { status },
       {
         headers: { Authorization: `Bearer ${authToken}` },

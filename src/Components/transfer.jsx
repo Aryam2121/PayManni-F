@@ -4,11 +4,12 @@ import { motion } from "framer-motion";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { useAuth } from "../context/AuthContext";
+import { getAuthToken, getStoredUser, getUserId, getAuthHeaders, getApiBase } from "../utils/authStorage";
 
 const MoneyTransferPage = () => {
   const [recipient, setRecipient] = useState("");
   const [amount, setAmount] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState("card");
+  const [paymentMethod, setPaymentMethod] = useState("wallet");
   const [isLoading, setIsLoading] = useState(false);
   const [transferStatus, setTransferStatus] = useState(null);
   const [transferHistory, setTransferHistory] = useState([]);
@@ -18,23 +19,18 @@ const MoneyTransferPage = () => {
   const [paypalId, setPaypalId] = useState("");
   const [upiId, setUpiId] = useState("");
   const { user } = useAuth();
-  const userId = user?._id || localStorage.getItem("userId");
+  const userId = getUserId();
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const storedUser = localStorage.getItem("paymanni_user");
-        const parsedUser = storedUser ? JSON.parse(storedUser) : null;
-        const userToFetch =  parsedUser?._id;
-        const token = parsedUser?.token;
-        const baseUrl = import.meta.env.VITE_BACKEND;
-        
+        const userToFetch = getUserId();
         const [balanceRes, historyRes] = await Promise.all([
-          axios.get(`https://${baseUrl}/api/myaccount/${userToFetch}`, {
-            headers: { Authorization: `Bearer ${token}` },
+          axios.get(`${getApiBase()}/api/myaccount/${userToFetch}`, {
+            headers: getAuthHeaders(),
           }),
-          axios.get(`https://${baseUrl}/api/transfers`, {
-           
+          axios.get(`${getApiBase()}/api/transfers`, {
+            headers: getAuthHeaders(),
           }),
         ]);
 
@@ -77,6 +73,7 @@ const MoneyTransferPage = () => {
     setTransferStatus(null);
 
     const paymentData = {
+      senderId: userId,
       recipient: recipient.trim(),
       amount: Number(amount),
       paymentMethod,
@@ -86,11 +83,8 @@ const MoneyTransferPage = () => {
     };
 
     try {
-      const token = localStorage.getItem("token");
-      const baseUrl = import.meta.env.VITE_BACKEND;
-
-      const response = await axios.post(`https://${baseUrl}/api/transfer`, paymentData, {
-        headers: { Authorization: `Bearer ${token}` },
+      const response = await axios.post(`${getApiBase()}/api/transfer`, paymentData, {
+        headers: getAuthHeaders(),
       });
 
       const newTransfer = response.data.transfer;
@@ -103,7 +97,7 @@ const MoneyTransferPage = () => {
       // Reset form
       setRecipient("");
       setAmount("");
-      setPaymentMethod("card");
+      setPaymentMethod("wallet");
       setCardDetails({ number: "", expiry: "", cvv: "" });
       setPaypalId("");
       setUpiId("");
@@ -146,7 +140,7 @@ const MoneyTransferPage = () => {
             value={recipient}
             onChange={(e) => setRecipient(e.target.value)}
             className="w-full p-4 bg-gray-700 border border-gray-600 rounded-md focus:ring-2 focus:ring-green-400"
-            placeholder="Recipient's Name"
+            placeholder="Recipient username"
           />
 
           <input
@@ -163,6 +157,7 @@ const MoneyTransferPage = () => {
             onChange={(e) => setPaymentMethod(e.target.value)}
             className="w-full p-4 bg-gray-700 border border-gray-600 rounded-md focus:ring-2 focus:ring-green-400"
           >
+            <option value="wallet">Wallet Balance</option>
             <option value="card">Credit/Debit Card</option>
             <option value="paypal">PayPal</option>
             <option value="upi">UPI</option>

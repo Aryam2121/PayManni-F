@@ -1,12 +1,24 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import { Loader2 } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
+import { useNavigate } from "react-router-dom";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const BillPaymentReminder = () => {
+  const { user, isAuthenticated, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
   const [bills, setBills] = useState(() => JSON.parse(localStorage.getItem("bills")) || []);
   const [reminders, setReminders] = useState([]);
   const [newBill, setNewBill] = useState({ name: "", amount: "", dueDate: "" });
-  const [darkMode, setDarkMode] = useState(true); // Default dark mode
   const [editIndex, setEditIndex] = useState(null);
+
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      navigate("/login-user");
+    }
+  }, [authLoading, isAuthenticated, navigate]);
 
   useEffect(() => {
     localStorage.setItem("bills", JSON.stringify(bills));
@@ -26,20 +38,26 @@ const BillPaymentReminder = () => {
   };
 
   const addBill = () => {
-    if (!newBill.name || !newBill.amount || !newBill.dueDate) return;
+    if (!newBill.name || !newBill.amount || !newBill.dueDate) {
+      toast.error("Please fill all fields");
+      return;
+    }
     if (editIndex !== null) {
       const updatedBills = [...bills];
       updatedBills[editIndex] = newBill;
       setBills(updatedBills);
       setEditIndex(null);
+      toast.success("Bill updated successfully!");
     } else {
       setBills([...bills, newBill]);
+      toast.success("Bill added successfully!");
     }
     setNewBill({ name: "", amount: "", dueDate: "" });
   };
 
   const removeBill = (index) => {
     setBills(bills.filter((_, i) => i !== index));
+    toast.success("Bill removed successfully!");
   };
 
   const editBill = (index) => {
@@ -47,22 +65,31 @@ const BillPaymentReminder = () => {
     setEditIndex(index);
   };
 
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center">
+        <motion.div
+          className="text-center"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+        >
+          <Loader2 className="w-16 h-16 text-blue-400 animate-spin mx-auto mb-4" />
+          <p className="text-gray-900 dark:text-white text-lg">Loading bill reminders...</p>
+        </motion.div>
+      </div>
+    );
+  }
+
   return (
-    <div className={`w-full min-h-screen flex justify-center items-center transition-all bg-gray-900 text-white`}>
+    <div className="w-full min-h-screen flex justify-center items-center transition-all bg-white dark:bg-gray-900 text-gray-900 dark:text-white duration-300">
       <motion.div
-        className="w-full max-w-4xl p-8 rounded-lg shadow-lg bg-gray-800"
+        className="w-full max-w-4xl p-8 rounded-lg shadow-lg bg-gray-50 dark:bg-gray-800 transition-colors duration-300"
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
       >
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-3xl font-bold">📅 Smart Bill Reminders</h2>
-          <button
-            onClick={() => setDarkMode(!darkMode)}
-            className="p-2 rounded-lg bg-gray-700 hover:bg-gray-600 transition"
-          >
-            {darkMode ? "🌞 Light" : "🌙 Dark"}
-          </button>
         </div>
 
         {/* Bills List */}
@@ -107,7 +134,7 @@ const BillPaymentReminder = () => {
             />
             <input
               type="number"
-              placeholder="Amount ($)"
+              placeholder="Amount (₹)"
               value={newBill.amount}
               onChange={(e) => setNewBill({ ...newBill, amount: e.target.value })}
               className="p-3 rounded-lg border bg-gray-700 text-white focus:outline-none"
@@ -152,6 +179,18 @@ const BillPaymentReminder = () => {
       >
         ➕
       </motion.button>
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="dark"
+      />
     </div>
   );
 };

@@ -1,8 +1,16 @@
+import { apiUrl, getAuthHeaders, getUserId } from "../utils/authStorage";
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { Loader2 } from 'lucide-react';
 import { useAuth } from "../context/AuthContext";
+import { useNavigate } from 'react-router-dom';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import BottomNav from "../Components/layout/BottomNav";
 
 const LoanApplication = () => {
+  const { user, isAuthenticated, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
   const [amount, setAmount] = useState('');
   const [term, setTerm] = useState('');
   const [status, setStatus] = useState('');
@@ -14,19 +22,20 @@ const LoanApplication = () => {
   const [loanId, setLoanId] = useState('');
   const [selectedLoan, setSelectedLoan] = useState(null);
   const [userUpi, setUserUpi] = useState('');
-  const { user } = useAuth();
-  const userId = user?._id || localStorage.getItem("userId");
-  const authToken = user?.token || localStorage.getItem("paymanni_token");
+  const userId = getUserId();
 
-  const headers = {
-    "Content-Type": "application/json",
-    "Authorization": `Bearer ${authToken}`,
-  };
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      navigate('/login');
+    }
+  }, [authLoading, isAuthenticated, navigate]);
+
+  const authHeaders = () => ({ "Content-Type": "application/json", ...getAuthHeaders() });
 
   useEffect(() => {
     const fetchUser = async () => {
-      const res = await fetch(`https://${import.meta.env.VITE_BACKEND}/api/myaccount/${userId}`, { 
-        headers, 
+      const res = await fetch(apiUrl(`/api/myaccount/${userId}`), { 
+        headers: authHeaders(), 
         credentials: "include" 
       });
       const data = await res.json();
@@ -43,8 +52,8 @@ const LoanApplication = () => {
 
   const fetchLoans = async () => {
     try {
-      const res = await fetch(`https://${import.meta.env.VITE_BACKEND}/api/getAllloans`, {
-        headers,
+      const res = await fetch(apiUrl(`/api/getAllloans`), {
+        headers: authHeaders(),
         credentials: 'include'
       });
       if (!res.ok) throw new Error("Failed to fetch loans");
@@ -58,8 +67,8 @@ const LoanApplication = () => {
   const fetchLoanById = async () => {
     if (!loanId) return;
     try {
-      const res = await fetch(`https://${import.meta.env.VITE_BACKEND}/api/loans/${loanId}`, {
-        headers,
+      const res = await fetch(apiUrl(`/api/loans/${loanId}`), {
+        headers: authHeaders(),
         credentials: 'include'
       });
       const data = await res.json();
@@ -125,9 +134,9 @@ const LoanApplication = () => {
     const approvalChance = parsedAmount < 100000 ? "High" : parsedAmount < 500000 ? "Medium" : "Low";
   
     try {
-      const res = await fetch(`https://${import.meta.env.VITE_BACKEND}/api/loans/apply`, {
+      const res = await fetch(apiUrl(`/api/loans/apply`), {
         method: "POST",
-        headers,
+        headers: authHeaders(),
         credentials: "include",
         body: JSON.stringify({
           amount: parsedAmount,
@@ -143,13 +152,18 @@ const LoanApplication = () => {
   
       if (data.success) {
         setStatus("✅ Loan applied successfully!");
+        toast.success("Loan applied successfully!");
         fetchLoans(); 
+        setAmount('');
+        setTerm('');
       } else {
         setStatus(data.message || "❌ Something went wrong!");
+        toast.error(data.message || "Something went wrong!");
       }
     } catch (err) {
       setLoading(false);
       setStatus("❌ Something went wrong! Please try again.");
+      toast.error("Something went wrong! Please try again.");
     }
   };
   const handleRepayEMI = async (loanId, amount, userUpi) => {
@@ -165,12 +179,9 @@ const LoanApplication = () => {
   
     try {
       // ✅ Step 2: Create Razorpay order
-      const res = await fetch(`https://${import.meta.env.VITE_BACKEND}/api/loans/payment/order`, {
+      const res = await fetch(apiUrl(`/api/loans/payment/order`), {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${authToken}`,
-        },
+        headers: authHeaders(),
         credentials: "include",
         body: JSON.stringify({ loanId, amount }),
       });
@@ -191,7 +202,7 @@ const LoanApplication = () => {
         order_id: data.order.id,
         handler: async (response) => {
           // ✅ Step 5: Verify Payment
-          const verifyRes = await fetch(`https://${import.meta.env.VITE_BACKEND}/api/loans/payment/verify`, {
+          const verifyRes = await fetch(apiUrl(`/api/loans/payment/verify`), {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             credentials: "include",
@@ -213,12 +224,9 @@ const LoanApplication = () => {
               userUpi,
             });
   
-            const repayRes = await fetch(`https://${import.meta.env.VITE_BACKEND}/api/${loanId}/repay`, {
+            const repayRes = await fetch(apiUrl(`/api/${loanId}/repay`), {
               method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${authToken}`,
-              },
+              headers: authHeaders(),
               credentials: "include",
               body: JSON.stringify({
                 loanId,
@@ -253,15 +261,30 @@ const LoanApplication = () => {
     }
   };
   
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center">
+        <motion.div
+          className="text-center"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+        >
+          <Loader2 className="w-16 h-16 text-blue-400 animate-spin mx-auto mb-4" />
+          <p className="text-gray-900 dark:text-white text-lg">Loading loan application...</p>
+        </motion.div>
+      </div>
+    );
+  }
+
   return (
-    <div className="p-6  shadow-2xl bg-gray-900 text-white transition-all" aria-live="polite">
+    <div className="p-6 shadow-2xl bg-white dark:bg-gray-900 text-gray-900 dark:text-white transition-all duration-300" aria-live="polite">
       <motion.div className="flex justify-between mb-4 items-center">
         <h2 className="text-3xl font-semibold">Apply for Instant Loan</h2>
         <input
           type="text"
           placeholder="Search by Loan ID"
           value={loanId}
-          onChange={(e) => fetchLoanById(e.target.value)}
+          onChange={(e) => setLoanId(e.target.value)}
           className="p-2 rounded-lg bg-gray-800 text-white border border-gray-700 focus:ring-2 focus:ring-indigo-500 shadow-md transition-all"
           aria-label="Search loan by ID"
         />
@@ -269,7 +292,7 @@ const LoanApplication = () => {
   
       <form onSubmit={handleApplyLoan} className="space-y-6" aria-describedby="status">
         <div className="flex flex-col">
-          <label className="text-lg font-medium" htmlFor="amount">Loan Amount ($):</label>
+          <label className="text-lg font-medium" htmlFor="amount">Loan Amount (₹):</label>
           <input
             id="amount"
             type="number"
@@ -300,7 +323,7 @@ const LoanApplication = () => {
   
         <motion.div className="bg-indigo-700 p-4 rounded-lg text-white shadow-lg transition-all" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
           <p className="font-medium">💰 Interest Rate: <span className="font-bold">{interestRate}%</span></p>
-          <p className="font-medium">📅 Monthly EMI: <span className="font-bold">${monthlyEMI}</span></p>
+          <p className="font-medium">📅 Monthly EMI: <span className="font-bold">₹{monthlyEMI}</span></p>
           <p className="font-medium">📊 Approval Chance: <span className="font-bold">{approvalChance}</span></p>
         </motion.div>
   
@@ -321,11 +344,11 @@ const LoanApplication = () => {
         {loans.map((loan) => (
           <motion.div key={loan._id} className="p-4 bg-gray-800 rounded-lg shadow-lg border border-gray-700 transition-all hover:shadow-2xl" whileHover={{ scale: 1.05 }}>
             <h3 className="text-lg font-semibold">Loan ID: {loan._id}</h3>
-            <p>Amount: <span className="font-bold">${loan.amount}</span></p>
+            <p>Amount: <span className="font-bold">₹{loan.amount}</span></p>
             <p>Term: <span className="font-bold">{loan.term} months</span></p>
             <p>Status: <span className="font-bold">{loan.status}</span></p>
             <button 
-              onClick={() => handleRepayEMI(loan._id, loan.amount)} 
+              onClick={() => handleRepayEMI(loan._id, loan.monthlyEMI || loan.amount, userUpi)} 
               className="mt-2 p-2 bg-green-600 text-white rounded-lg w-full hover:bg-green-700 shadow-md hover:shadow-lg transition-all"
               disabled={loading}
             >
@@ -334,6 +357,19 @@ const LoanApplication = () => {
           </motion.div>
         ))}
       </div>
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="dark"
+      />
+      <BottomNav />
     </div>
   );
   

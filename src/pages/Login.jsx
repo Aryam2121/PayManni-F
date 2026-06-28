@@ -1,3 +1,4 @@
+import { apiUrl, getAuthHeaders, getUserId } from "../utils/authStorage";
 import React, { useState } from "react";
 import { FaSpinner } from "react-icons/fa";
 import { Link } from "react-router-dom";
@@ -28,7 +29,7 @@ const LoginPage = () => {
     setError("");
     setIsLoading(true);
     try {
-      const response = await axios.post(`https://${import.meta.env.VITE_BACKEND}/api/auth/login`, { email, password });
+      const response = await axios.post(apiUrl(`/api/auth/login`), { email, password });
       if (response.data.success) {
         alert("Login Successful!");
       } else {
@@ -50,7 +51,7 @@ const LoginPage = () => {
     setError("");
     setIsLoading(true);
     try {
-      const response = await axios.post(`https://${import.meta.env.VITE_BACKEND}/api/auth/send-otp`, { phoneNumber: phone });
+      const response = await axios.post(apiUrl(`/api/auth/send-otp`), { phoneNumber: phone });
       if (response.data.success) {
         setGeneratedOtp(response.data.otp); // Save OTP for verification
         alert(`Your OTP is ${response.data.otp}`); // Replace with real OTP service
@@ -77,7 +78,7 @@ const LoginPage = () => {
   const handleGoogleLoginSuccess = async (response) => {
     try {
       const googleToken = response.credential; // Get the Google OAuth token
-      const res = await axios.post(`https://${import.meta.env.VITE_BACKEND}/api/auth/google`, { token: googleToken });
+      const res = await axios.post(apiUrl(`/api/auth/google`), { token: googleToken });
       if (res.data.success) {
         const { token } = res.data;
         localStorage.setItem("authToken", token); // Store the token
@@ -204,7 +205,7 @@ const LoginPage = () => {
           </div>
 
           <div className="mt-6 text-center">
-            <Link to="/register" className="text-blue-500">Don't have an account? Register</Link>
+            <Link to="/register-user" className="text-blue-500">Don't have an account? Register</Link>
           </div>
         </div>
       </div>

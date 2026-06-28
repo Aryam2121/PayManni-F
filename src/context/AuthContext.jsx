@@ -1,65 +1,45 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import axios from "axios";
+import { apiUrl, setAuthSession, clearAuthStorage, getStoredUser } from "../utils/authStorage";
 
-// Create context
 const AuthContext = createContext();
 
-// Custom hook
 export const useAuth = () => useContext(AuthContext);
 
-// Provider
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null); // Stores the user object
-  const [loading, setLoading] = useState(true); // For initial auth check
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  // On mount: check localStorage
   useEffect(() => {
-    const storedUser = localStorage.getItem("paymanni_user");
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
+    const stored = getStoredUser();
+    if (stored) setUser(stored);
     setLoading(false);
   }, []);
 
-  // Login
   const login = async (email, password) => {
-    const res = await axios.post(
-      `https://${import.meta.env.VITE_BACKEND}/api/login`,
-      { email, password }
-    );
-    setUser(res.data.user);
-    localStorage.setItem("paymanni_user", JSON.stringify(res.data.user));
-    localStorage.setItem("paymanni_token", res.data.token); // ✅ Add this
-    localStorage.setItem("userId", res.data.user._id); // ✅ fixed
+    const res = await axios.post(apiUrl("/api/login"), { email, password });
+    const { token, user: userData } = res.data;
+    setAuthSession({ token, user: userData });
+    setUser({ ...userData, id: userData.id || userData._id, _id: userData._id || userData.id });
     return res.data;
   };
-  
+
   const register = async (formData) => {
-    const res = await axios.post(
-      `https://${import.meta.env.VITE_BACKEND}/api/register`,
-      formData
-    );
-    setUser(res.data.user);
-    localStorage.setItem("paymanni_user", JSON.stringify(res.data.user));
-    localStorage.setItem("paymanni_token", res.data.token); // ✅ Add this
-    localStorage.setItem("userId", res.data.user._id); // ✅ fixed
-
+    const res = await axios.post(apiUrl("/api/register"), formData);
+    const { token, user: userData } = res.data;
+    setAuthSession({ token, user: userData });
+    setUser({ ...userData, id: userData.id || userData._id, _id: userData._id || userData.id });
     return res.data;
   };
-  
-  
 
-  // Logout
   const logout = () => {
     setUser(null);
-    localStorage.removeItem("paymanni_user");
-    localStorage.removeItem("paymanni_token"); // ✅ Add this
-    localStorage.removeItem("userId"); // optional
+    clearAuthStorage();
   };
-  
+
   return (
     <AuthContext.Provider
-      value={{ user, setUser, login, logout, register, isAuthenticated: !!user }}
+      value={{ user, setUser, login, logout, register, loading, isAuthenticated: !!user }}
     >
       {!loading && children}
     </AuthContext.Provider>

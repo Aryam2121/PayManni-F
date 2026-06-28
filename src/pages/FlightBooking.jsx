@@ -1,9 +1,16 @@
+import { apiUrl, getAuthHeaders, getUserId } from "../utils/authStorage";
 import React, { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import { Loader2, XCircle } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
+import { useNavigate } from "react-router-dom";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import axios from "axios";
 
 const FlightBooking = () => {
+  const { user, isAuthenticated, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
   const [tripType, setTripType] = useState("Round Trip");
   const [formData, setFormData] = useState({
     from: "",
@@ -21,6 +28,12 @@ const FlightBooking = () => {
   const [filters, setFilters] = useState({ airline: "", maxPrice: "" });
   const [errors, setErrors] = useState([]);
 
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      navigate("/login-user");
+    }
+  }, [authLoading, isAuthenticated, navigate]);
+
   // Form validation
   const validateForm = () => {
     const newErrors = [];
@@ -36,25 +49,41 @@ const FlightBooking = () => {
   };
 
   const handleSearch = async () => {
-    if (!validateForm()) return;
+    if (!validateForm()) {
+      toast.error("Please fill all required fields");
+      return;
+    }
   
     setIsLoading(true);
     try {
-      const { data } = await axios.post(`https://${import.meta.env.VITE_BACKEND}/api/flights/search`, formData);
+      const { data } = await axios.post(
+        apiUrl(`/api/flights/search`), 
+        formData,
+        {
+          headers: {
+            "Authorization": `Bearer ${user?.token || localStorage.getItem("paymanni_token")}`
+          }
+        }
+      );
       
-      console.log("API Response:", data); // Debugging line
-  
       if (Array.isArray(data.flights)) {
         setSearchResults(data.flights);
+        if (data.flights.length === 0) {
+          toast.info("No flights found for this route. Try different dates or cities.");
+        } else {
+          toast.success(`Found ${data.flights.length} flights!`);
+        }
       } else {
         console.error("Expected an array but got:", data.flights);
-        setSearchResults([]); // Fallback to an empty array
+        setSearchResults([]);
+        toast.error("Invalid response from server");
       }
       
       setShowResults(true);
     } catch (error) {
       console.error("API Error:", error);
-      alert("Failed to fetch flights. Please try again.");
+      toast.error(error.response?.data?.message || "Failed to fetch flights. Please try again.");
+      setSearchResults([]);
     } finally {
       setIsLoading(false);
     }
@@ -93,7 +122,7 @@ const FlightBooking = () => {
   useEffect(() => {
     const fetchFlights = async () => {
       try {
-        const response = await axios.get(`https://${import.meta.env.VITE_BACKEND}/api/flights/fetch`);
+        const response = await axios.get(apiUrl(`/api/flights`));
         setSearchResults(response.data);
       } catch (error) {
         console.error("Error fetching flights:", error);
@@ -105,7 +134,7 @@ const FlightBooking = () => {
   const handlePayment = async (price) => {
     try {
       // Step 1: Create an order using the backend API
-      const { data } = await axios.post(`https://${import.meta.env.VITE_BACKEND}/api/order`, {
+      const { data } = await axios.post(apiUrl(`/api/order`), {
         amount: price,
       });
   
@@ -121,7 +150,7 @@ const FlightBooking = () => {
           handler: async function (response) {
             // Step 3: Verify the payment once done
             const verification = await axios.post(
-              `https://${import.meta.env.VITE_BACKEND}/api/verify-payment`,
+              apiUrl(`/api/verify-payment`),
               {
                 razorpay_order_id: response.razorpay_order_id,
                 razorpay_payment_id: response.razorpay_payment_id,
@@ -154,23 +183,42 @@ const FlightBooking = () => {
   };
   
 
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center">
+        <motion.div
+          className="text-center"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+        >
+          <Loader2 className="w-16 h-16 text-blue-400 animate-spin mx-auto mb-4" />
+          <p className="text-gray-900 dark:text-white text-lg">Loading flight booking...</p>
+        </motion.div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-gray-900 p-6">
-      <div className="bg-gray-200 rounded-xl shadow-lg max-w-5xl w-full mx-auto p-8">
-        <h1 className="text-4xl font-extrabold text-blue-700 text-center mb-8">Flight Booking</h1>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6 transition-colors duration-300">
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg max-w-5xl w-full mx-auto p-8 transition-colors duration-300">
+        <h1 className="text-4xl font-extrabold text-blue-700 dark:text-blue-400 text-center mb-8 transition-colors">Flight Booking</h1>
 
         {/* Errors Section */}
         {errors.length > 0 && (
-          <div className="bg-red-100 text-red-800 p-4 mb-4 rounded-lg">
+          <motion.div
+            className="bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 p-4 mb-4 rounded-lg border border-red-300 dark:border-red-700"
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
             <ul>
               {errors.map((error, index) => (
-                <li key={index} className="flex justify-between">
+                <li key={index} className="flex justify-between items-center">
                   {error}
-                  <XCircle className="cursor-pointer" onClick={() => setErrors([])} />
+                  <XCircle className="cursor-pointer hover:text-red-600" onClick={() => setErrors([])} />
                 </li>
               ))}
             </ul>
-          </div>
+          </motion.div>
         )}
 
         {/* Trip Type Toggle */}
@@ -179,7 +227,7 @@ const FlightBooking = () => {
             <button
               key={type}
               onClick={() => setTripType(type)}
-              className={`py-3 px-8 rounded-full font-medium text-lg transition ${tripType === type ? "bg-blue-600 text-white shadow-md" : "bg-gray-200 hover:bg-gray-300"}`}
+              className={`py-3 px-8 rounded-full font-medium text-lg transition-all duration-300 ${tripType === type ? "bg-blue-600 text-white shadow-md" : "bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white hover:bg-gray-300 dark:hover:bg-gray-600"}`}
             >
               {type}
             </button>
@@ -189,13 +237,14 @@ const FlightBooking = () => {
         {/* Form */}
         <motion.form layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }} className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div>
-            <label htmlFor="from" className="text-lg font-medium text-gray-700">From</label>
+            <label htmlFor="from" className="text-lg font-medium text-gray-700 dark:text-gray-300">From</label>
             <select
               id="from"
               name="from"
               value={formData.from}
               onChange={(e) => setFormData((prev) => ({ ...prev, from: e.target.value }))}
-              className="mt-2 block w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-600"
+              className="mt-2 block w-full p-3 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-colors"
+              required
             >
               <option value="">Select City</option>
               {cities.map((city, index) => (
@@ -205,13 +254,14 @@ const FlightBooking = () => {
           </div>
 
           <div>
-            <label htmlFor="to" className="text-lg font-medium text-gray-700">To</label>
+            <label htmlFor="to" className="text-lg font-medium text-gray-700 dark:text-gray-300">To</label>
             <select
               id="to"
               name="to"
               value={formData.to}
               onChange={(e) => setFormData((prev) => ({ ...prev, to: e.target.value }))}
-              className="mt-2 block w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-600"
+              className="mt-2 block w-full p-3 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-colors"
+              required
             >
               <option value="">Select City</option>
               {cities.map((city, index) => (
@@ -353,6 +403,18 @@ const FlightBooking = () => {
             </div>
           </div>
         )}
+        <ToastContainer
+          position="top-right"
+          autoClose={3000}
+          hideProgressBar={false}
+          newestOnTop
+          closeOnClick
+          rtl={false}
+          pauseOnFocusLoss
+          draggable
+          pauseOnHover
+          theme="dark"
+        />
       </div>
     </div>
   );

@@ -1,13 +1,17 @@
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import { motion } from "framer-motion";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { MapPin, Clock, DollarSign, Loader2, BusFront, Ticket, User } from "lucide-react";
-import off from "../assets/500.jpg";
-import refund from "../assets/refund.jpg";
-import mahakumbh from "../assets/mhakumh.jpg";
+import { useAuth } from "../context/AuthContext";
+import { useNavigate } from "react-router-dom";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import { getAuthToken, getStoredUser, getUserId, getUserUpi, getApiBase } from "../utils/authStorage";
 
 export default function BusBooking() {
+  const { user, isAuthenticated, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
   const [tripType, setTripType] = useState("One Way");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
@@ -18,74 +22,182 @@ export default function BusBooking() {
   const [showBookings, setShowBookings] = useState(false);
   const [selectedBus, setSelectedBus] = useState(null);
   const [selectedSeats, setSelectedSeats] = useState([]);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      navigate("/login");
+    }
+  }, [authLoading, isAuthenticated, navigate]);
   
   const openSeatSelector = (bus) => {
     setSelectedBus(bus);
     setSelectedSeats([]);
   };
   const fetchBuses = async () => {
+    if (!from || !to) {
+      toast.error("Please select both departure and destination cities");
+      return;
+    }
+
     setLoading(true);
+    setError("");
     try {
       const queryParams = new URLSearchParams();
   
       if (from) queryParams.append("from", from);
       if (to) queryParams.append("to", to);
-      if (date) queryParams.append("date", date); // Must be in YYYY-MM-DD format
+      if (date) {
+        const formattedDate = date.toISOString().split('T')[0];
+        queryParams.append("date", formattedDate);
+      }
       if (seatType) queryParams.append("seatType", seatType);
   
-      const response = await fetch(`https://${import.meta.env.VITE_BACKEND}/buses?${queryParams.toString()}`, {
+      const response = await fetch(apiUrl(`/api/buses?${queryParams.toString()}`), {
         method: "GET",
+        headers: {
+          "Authorization": `Bearer ${user?.token || localStorage.getItem("paymanni_token")}`
+        }
       });
   
       if (!response.ok) {
         const errorData = await response.json();
-        console.error("Error fetching buses:", errorData.message || response.statusText);
+        const errorMsg = errorData.message || response.statusText;
+        setError(errorMsg);
+        toast.error(errorMsg);
         return;
       }
   
       const data = await response.json();
       setBuses(data);
+      if (data.length === 0) {
+        toast.info("No buses found for this route. Try different cities or dates.");
+      } else {
+        toast.success(`Found ${data.length} buses!`);
+      }
     } catch (error) {
-      console.error("Network or server error while fetching buses:", error);
+      const errorMsg = "Network error while fetching buses. Please check your connection.";
+      setError(errorMsg);
+      toast.error(errorMsg);
+      console.error("Error:", error);
     } finally {
       setLoading(false);
     }
   };
   
 
-  const bookBus = async (bus, payment, user, from, to, seatType, date) => {
+  const bookBus = async (bus, payment, bookingUser, fromCity, toCity, seatTypeValue, travelDate) => {
     try {
-      const response = await fetch(`https://${import.meta.env.VITE_BACKEND}/bookBus`, {
+      const response = await fetch(`${getApiBase()}/api/booking`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${getAuthToken()}`
         },
         body: JSON.stringify({
-          busId: bus._id,
+          busId: bus._id || bus.id,
           user: {
-            _id: user._id,
-            upi: user.upi
+            _id: bookingUser._id || bookingUser.id,
+            upi: bookingUser.upi || bookingUser.upiId || getUserUpi()
           },
-          date, // should be in 'YYYY-MM-DD' format
-          from,
-          to,
-          seatType,
-          payment // includes razorpay_order_id, razorpay_payment_id, razorpay_signature
+          date: travelDate,
+          from: fromCity,
+          to: toCity,
+          seatType: seatTypeValue || seatType,
+          payment
         })
       });
   
       const data = await response.json();
   
       if (response.ok) {
-        alert("✅ Bus booked successfully!");
-        console.log("Booking Info:", data.booking);
+        toast.success("Bus booked successfully!");
+        setSelectedBus(null);
+        setSelectedSeats([]);
       } else {
-        alert(`❌ Booking failed: ${data.message}`);
+        toast.error(data.message || "Booking failed");
       }
     } catch (error) {
-      console.error("❌ Error booking bus:", error);
-      alert("Something went wrong during booking.");
+      console.error("Error booking bus:", error);
+      toast.error("Something went wrong during booking.");
     }
+  };
+
+  const bookSelectedSeats = async () => {
+    if (!selectedBus || selectedSeats.length === 0) {
+      toast.error("Please select at least one seat");
+      return;
+    }
+
+    const totalAmount = selectedSeats.length * (selectedBus.price || 0);
+    const storedUser = getStoredUser() || user;
+    const userId = getUserId();
+
+    if (!userId) {
+      toast.error("Please log in to book tickets");
+      navigate("/login");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const orderRes = await fetch(`${getApiBase()}/api/payment/order`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${getAuthToken()}`
+        },
+        body: JSON.stringify({ amount: totalAmount, currency: "INR" })
+      });
+
+      const order = await orderRes.json();
+      if (!orderRes.ok || !order.id) {
+        throw new Error(order.message || "Failed to create payment order");
+      }
+
+      const options = {
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+        amount: order.amount,
+        currency: order.currency || "INR",
+        name: "PayManni Bus Booking",
+        description: `${selectedBus.name} - ${selectedSeats.length} seat(s)`,
+        order_id: order.id,
+        handler: async (response) => {
+          const formattedDate = date.toISOString().split("T")[0];
+          await bookBus(
+            selectedBus,
+            {
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature
+            },
+            { _id: userId, upi: getUserUpi() },
+            from,
+            to,
+            seatType,
+            formattedDate
+          );
+        },
+        theme: { color: "#2563EB" }
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.on("payment.failed", () => toast.error("Payment failed. Please try again."));
+      rzp.open();
+    } catch (error) {
+      console.error("Payment error:", error);
+      toast.error(error.message || "Unable to start payment");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getBusSeats = (bus) => {
+    if (bus?.seats?.length) return bus.seats;
+    return Array.from({ length: 12 }, (_, i) => ({
+      number: i + 1,
+      available: true
+    }));
   };
   
   const filteredBuses = useMemo(() => {
@@ -94,13 +206,28 @@ export default function BusBooking() {
       
 
   const offers = [
-    { id: 1, image: mahakumbh, link: "#" },
-    { id: 2, image: off, link: "#" },
-    { id: 3, image: refund, link: "#" },
+    { id: 1, image: "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=400&h=250&fit=crop", link: "#" },
+    { id: 2, image: "https://images.unsplash.com/photo-1570125909232-eb263c3f8a2c?w=400&h=250&fit=crop", link: "#" },
+    { id: 3, image: "https://images.unsplash.com/photo-1506377247377-780bec9c32f0?w=400&h=250&fit=crop", link: "#" },
   ];
 
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+        <motion.div
+          className="text-center"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+        >
+          <Loader2 className="w-16 h-16 text-blue-400 animate-spin mx-auto mb-4" />
+          <p className="text-white text-lg">Loading bus booking...</p>
+        </motion.div>
+      </div>
+    );
+  }
+
   return (
-    <div className="p-6 space-y-6 bg-gray-900 text-white rounded-xl shadow-lg">
+    <div className="p-6 space-y-6 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-xl shadow-lg transition-colors duration-300">
       <motion.h2 
         className="text-4xl font-bold text-center text-blue-400"
         initial={{ opacity: 0, y: -20 }} 
@@ -133,7 +260,7 @@ export default function BusBooking() {
       </div>
 
       {/* Input Fields */}
-      <motion.div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 bg-gray-800 p-6 rounded-xl shadow-md border border-gray-700"
+      <motion.div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 bg-gray-50 dark:bg-gray-800 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-700"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.5 }}
@@ -142,9 +269,12 @@ export default function BusBooking() {
           <div key={index} className="relative">
             <MapPin className="absolute left-3 top-3 text-gray-400" />
             <input 
-              type="text" placeholder={placeholder} value={placeholder === "From" ? from : to}
+              type="text" 
+              placeholder={placeholder} 
+              value={placeholder === "From" ? from : to}
               onChange={(e) => placeholder === "From" ? setFrom(e.target.value) : setTo(e.target.value)}
-              className="p-3 pl-10 bg-gray-700 border border-gray-600 rounded-xl shadow-sm focus:ring focus:ring-blue-400 w-full text-white"
+              className="p-3 pl-10 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl shadow-sm focus:ring focus:ring-blue-400 w-full text-gray-900 dark:text-white transition-colors"
+              required
             />
           </div>
         ))}
@@ -152,9 +282,21 @@ export default function BusBooking() {
         <DatePicker 
           selected={date} 
           onChange={(date) => setDate(date)}
-          className="p-3 bg-gray-700 border border-gray-600 rounded-xl shadow-sm focus:ring focus:ring-blue-400 w-full text-white"
+          minDate={new Date()}
+          dateFormat="yyyy-MM-dd"
+          className="p-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl shadow-sm focus:ring focus:ring-blue-400 w-full text-gray-900 dark:text-white transition-colors"
         />
       </motion.div>
+
+      {error && (
+        <motion.div
+          className="bg-red-100 dark:bg-red-900 border border-red-400 dark:border-red-600 text-red-700 dark:text-red-300 px-4 py-3 rounded-xl"
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          {error}
+        </motion.div>
+      )}
 
       {/* Seat Type Filters */}
       <div className="flex justify-center space-x-4">
@@ -218,7 +360,7 @@ onClick={() => openSeatSelector(bus)}
       <h2 className="text-xl font-bold text-center">🪑 Select Seats for {selectedBus.name}</h2>
 
       <div className="grid grid-cols-4 gap-3">
-        {selectedBus.seats.map((seat, idx) => (
+        {getBusSeats(selectedBus).map((seat, idx) => (
           <button
             key={idx}
             className={`p-3 rounded-xl ${
@@ -259,6 +401,18 @@ onClick={() => openSeatSelector(bus)}
     </div>
   </div>
 )}
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="dark"
+      />
     </div>
   );
 }

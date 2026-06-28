@@ -1,4 +1,11 @@
-import React, { useState } from 'react';
+import { apiUrl, getAuthHeaders, getUserId } from "../utils/authStorage";
+import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
+import { Loader2 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import axios from 'axios';
 
 const trains = [
@@ -10,6 +17,8 @@ const trains = [
 const classes = ['Sleeper', 'AC First Class', 'AC Second Class'];
 
 const TrainBooking = () => {
+  const { user, isAuthenticated, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     from: '',
     to: '',
@@ -28,7 +37,13 @@ const TrainBooking = () => {
   const [promoCode, setPromoCode] = useState('');
 
   const cities = ['New York', 'Los Angeles', 'Chicago', 'San Francisco', 'Boston'];
-  const discountCodes = { 'FIRST20': 0.2, 'STUDENT10': 0.1 }; // Example promo codes
+  const discountCodes = { 'FIRST20': 0.2, 'STUDENT10': 0.1 };
+
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      navigate('/login-user');
+    }
+  }, [authLoading, isAuthenticated, navigate]);
 
   
   const handleChange = (e) => {
@@ -48,16 +63,29 @@ const TrainBooking = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!validateForm()) return;
+    if (!validateForm()) {
+      toast.error('Please fill all required fields correctly');
+      return;
+    }
 
     setLoading(true);
     try {
       const response = await axios.get(
-        `https://${import.meta.env.VITE_BACKEND}/api/trains`, 
-        { params: { from: formData.from, to: formData.to, date: formData.date, class: formData.class } }
+        apiUrl(`/api/trains`), 
+        { 
+          params: { from: formData.from, to: formData.to, date: formData.date, class: formData.class },
+          headers: {
+            'Authorization': `Bearer ${user?.token || localStorage.getItem('paymanni_token')}`
+          }
+        }
       );
 
       setAvailableTrains(response.data);
+      if (response.data.length === 0) {
+        toast.info('No trains found for this route. Try different cities or dates.');
+      } else {
+        toast.success(`Found ${response.data.length} trains!`);
+      }
 
       const selectedTrain = response.data.find(train => train.id === formData.train);
       if (selectedTrain) {
@@ -65,6 +93,7 @@ const TrainBooking = () => {
       }
     } catch (error) {
       console.error('Error fetching trains:', error);
+      toast.error(error.response?.data?.message || 'Failed to fetch trains. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -73,9 +102,9 @@ const TrainBooking = () => {
   const handlePromoCode = () => {
     if (discountCodes[promoCode]) {
       setFormData((prev) => ({ ...prev, discount: discountCodes[promoCode] }));
-      alert('Promo code applied!');
+      toast.success(`Promo code applied! ${discountCodes[promoCode] * 100}% discount`);
     } else {
-      alert('Invalid promo code');
+      toast.error('Invalid promo code');
     }
   };
 
@@ -88,7 +117,7 @@ const TrainBooking = () => {
     const totalAmount = calculateTotalPrice();
     
     try {
-      const { data } = await axios.post(`https://${import.meta.env.VITE_BACKEND}/api/trains/create-payment`, {
+      const { data } = await axios.post(apiUrl(`/api/trains/create-payment`), {
         amount: totalAmount,
         currency: 'INR',
       });
@@ -102,7 +131,7 @@ const TrainBooking = () => {
           description: "Train Ticket Payment",
           order_id: data.order.id,
           handler: async (response) => {
-            const verification = await axios.post(`https://${import.meta.env.VITE_BACKEND}/api/trains/verify-payment`, {
+            const verification = await axios.post(apiUrl(`/api/trains/verify-payment`), {
               razorpay_order_id: response.razorpay_order_id,
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_signature: response.razorpay_signature,
@@ -130,10 +159,25 @@ const TrainBooking = () => {
     }
   };
   
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center">
+        <motion.div
+          className="text-center"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+        >
+          <Loader2 className="w-16 h-16 text-blue-400 animate-spin mx-auto mb-4" />
+          <p className="text-gray-900 dark:text-white text-lg">Loading train booking...</p>
+        </motion.div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-gray-900 p-6">
-      <div className="max-w-5xl mx-auto p-6 bg-gray-200 rounded-lg shadow-md mt-8">
-      <h2 className="text-3xl font-bold mb-6 text-center text-blue-700">Train Booking System</h2>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6 transition-colors duration-300">
+      <div className="max-w-5xl mx-auto p-6 bg-white dark:bg-gray-800 rounded-lg shadow-md mt-8 transition-colors duration-300">
+      <h2 className="text-3xl font-bold mb-6 text-center text-blue-700 dark:text-blue-400 transition-colors">Train Booking System</h2>
 
       <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
        {/* From */}
@@ -318,6 +362,18 @@ const TrainBooking = () => {
     </div>
   </div>
 ) : null}
+        <ToastContainer
+          position="top-right"
+          autoClose={3000}
+          hideProgressBar={false}
+          newestOnTop
+          closeOnClick
+          rtl={false}
+          pauseOnFocusLoss
+          draggable
+          pauseOnHover
+          theme="dark"
+        />
     </div>
   </div>
   );

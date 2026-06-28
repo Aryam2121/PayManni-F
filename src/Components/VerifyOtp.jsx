@@ -1,3 +1,4 @@
+import { apiUrl, getAuthHeaders, getUserId } from "../utils/authStorage";
 // pages/VerifyOtp.jsx
 import React, { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -18,7 +19,7 @@ const VerifyOtp = () => {
 
       // Register the user in your backend
       await axios.post(
-        `https://${import.meta.env.VITE_BACKEND}/api/register`,
+        apiUrl(`/api/register`),
         {
           name: state.name,
           phoneNumber: state.phoneNumber,

@@ -1,3 +1,4 @@
+import { apiUrl, getAuthHeaders, getUserId } from "../utils/authStorage";
 import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import axios from "axios";
@@ -15,11 +16,11 @@ export default function BookMovie() {
   const [selectedSeats, setSelectedSeats] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  const userId = user?._id || localStorage.getItem("userId");
+  const userId = getUserId();
 
   useEffect(() => {
     axios
-      .get(`https://${import.meta.env.VITE_BACKEND}/api/movies/${movieId}`)
+      .get(apiUrl(`/api/movies/${movieId}`))
       .then((res) => setMovie(res.data.movie))
       .catch(() => alert("Error fetching movie"));
   }, [movieId]);
@@ -42,7 +43,7 @@ export default function BookMovie() {
       setLoading(true);
   
       // Ask backend to create Razorpay payment link
-      const { data } = await axios.post(`https://${import.meta.env.VITE_BACKEND}/api/payment/create-link`, {
+      const { data } = await axios.post(apiUrl(`/api/payment/create-link`), {
         amount: totalAmount,
         movieId,
         userId,

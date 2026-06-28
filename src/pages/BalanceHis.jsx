@@ -1,3 +1,4 @@
+import { apiUrl, getAuthHeaders, getUserId } from "../utils/authStorage";
 import React, { useEffect, useState } from 'react';
 import {
   Wallet,
@@ -6,15 +7,32 @@ import {
   ArrowDown,
   ArrowUp,
   IndianRupee,
+  Loader2,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useAuth } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import axios from 'axios';
+import PageShell from '../Components/layout/PageShell';
+import BottomNav from '../Components/layout/BottomNav';
+import { formatCurrency, isCreditTransaction } from '../utils/format';
 
 const BalanceHis = () => {
+  const { user, isAuthenticated, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
   const [userId, setUserId] = useState(null);
   const [wallet, setWallet] = useState(null);
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      navigate('/login-user');
+    }
+  }, [authLoading, isAuthenticated, navigate]);
 
   const cardVariants = {
     hidden: { opacity: 0, y: 20 },
@@ -25,57 +43,76 @@ const BalanceHis = () => {
     }),
   };
 
-  const fetchAllData = async (id) => {
-    const storedUser = localStorage.getItem("paymanni_user");
-    const parsedUser = storedUser ? JSON.parse(storedUser) : null;
-    const userToFetch = id || parsedUser?._id;
-    const token = parsedUser?.token;
-
-    if (!token || !userToFetch) {
-      console.warn("Token or userId not found");
+  const fetchAllData = async () => {
+    const userToFetch = getUserId();
+    if (!userToFetch) {
+      setError('Authentication required');
+      navigate('/login');
       return;
     }
 
     setLoading(true);
+    setError('');
     try {
-      const [walletRes, txnRes] = await Promise.all([
-        axios.get(`${import.meta.env.VITE_BACKEND}/api/myaccount/${userToFetch}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }),
-        axios.get(`${import.meta.env.VITE_BACKEND}/api/transactions/all`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }),
-      ]);
-
+      const headers = getAuthHeaders();
+      const walletRes = await axios.get(apiUrl(`/api/myaccount/${userToFetch}`), { headers });
       setWallet(walletRes.data);
-      setTransactions(txnRes.data?.transactions || []);
+
+      try {
+        const txnRes = await axios.get(apiUrl('/api/transactions/all'), { headers });
+        setTransactions(txnRes.data?.transactions || []);
+      } catch {
+        const fallback = await axios.get(apiUrl(`/api/wallet/transactions/${userToFetch}`), {
+          headers,
+          params: { limit: 20 },
+        });
+        const list = Array.isArray(fallback.data) ? fallback.data : [];
+        setTransactions(list);
+      }
     } catch (err) {
-      console.error("Error fetching wallet or transactions:", err);
+      const errorMsg = err.response?.data?.message || 'Failed to load balance history';
+      setError(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    const storedUser = localStorage.getItem("paymanni_user");
-    const parsedUser = storedUser ? JSON.parse(storedUser) : null;
-
-    if (parsedUser && parsedUser._id) {
-      setUserId(parsedUser._id);
-      fetchAllData(parsedUser._id);
-    } else {
-      console.warn("No valid user found");
+    if (!authLoading && isAuthenticated) {
+      setUserId(getUserId());
+      fetchAllData();
     }
-  }, []);
+  }, [authLoading, isAuthenticated]);
+
+  if (authLoading || loading) {
+    return (
+      <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center">
+        <motion.div
+          className="text-center"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+        >
+          <Loader2 className="w-16 h-16 text-blue-400 animate-spin mx-auto mb-4" />
+          <p className="text-gray-900 dark:text-white text-lg">Loading balance history...</p>
+        </motion.div>
+      </div>
+    );
+  }
 
   return (
-    <div className="p-6 text-gray-100 dark:bg-[#0f172a] min-h-screen transition-colors">
+    <div className="p-6 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen transition-colors duration-300">
+      {error && (
+        <motion.div
+          className="bg-red-100 dark:bg-red-900 border border-red-400 dark:border-red-600 text-red-700 dark:text-red-300 px-4 py-3 rounded-xl mb-4"
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          {error}
+        </motion.div>
+      )}
       <div className="flex items-center justify-between mb-10">
-        <h2 className="text-4xl font-bold flex items-center gap-3 text-indigo-400">
+        <h2 className="text-4xl font-bold flex items-center gap-3 text-indigo-600 dark:text-indigo-400">
           <Wallet className="w-8 h-8 animate-bounce" />
           Wallet Summary
         </h2>
@@ -153,6 +190,18 @@ const BalanceHis = () => {
           </motion.div>
         </div>
       )}
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="dark"
+      />
     </div>
   );
 };

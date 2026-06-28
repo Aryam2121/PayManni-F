@@ -1,10 +1,11 @@
+import { apiUrl, getAuthHeaders, getUserId, getUserUpi } from "../utils/authStorage";
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { toast } from 'react-toastify';
 import { FiStar, FiSearch } from 'react-icons/fi';
 import axios from 'axios';
-import Razorpay from 'razorpay';
 import { useAuth } from "../context/AuthContext";
+import { useTheme } from "../context/ThemeContext";
 
 const PaymentContacts = () => {
   const [contacts, setContacts] = useState([]);
@@ -22,13 +23,14 @@ const PaymentContacts = () => {
     const [paymentMethod, setPaymentMethod] = useState("wallet"); // 🔥 Added this line
 
   const { user } = useAuth();
+  const { darkMode } = useTheme();
   useEffect(() => {
-    const userId = user?._id || localStorage.getItem("userId");
+    const userId = getUserId();
   
     setNewContact((prev) => ({
       ...prev,
       userId,
-      userUpi: user?.upiId,
+      userUpi: getUserUpi() || user?.upi || user?.upiId || "",
     }));
   }, [user, bankData]);
   
@@ -36,7 +38,7 @@ const PaymentContacts = () => {
     const fetchInitialData = async () => {
       try {
         const [contactsRes] = await Promise.all([
-          axios.get(`https://${import.meta.env.VITE_BACKEND}/api/contacts`),
+          axios.get(apiUrl("/api/contacts"), { headers: getAuthHeaders() }),
         ]);
         setContacts(contactsRes.data);
       } catch (error) {
@@ -56,12 +58,12 @@ const PaymentContacts = () => {
     }
   
     try {
-      const res = await axios.post(`https://${import.meta.env.VITE_BACKEND}/api/addcontacts`, {
+      const res = await axios.post(apiUrl("/api/addcontacts"), {
         name,
         phone,
         userId,
         userUpi,
-      });
+      }, { headers: getAuthHeaders() });
       setContacts([...contacts, res.data]);
       setNewContact({ name: '', phone: '', userId: '', userUpi: '' }); // reset form
       toast.success('Contact added successfully!');
@@ -85,7 +87,7 @@ const PaymentContacts = () => {
       const contact = contacts.find((c) => c._id === contactId);
       const updatedContact = { isFavorite: !contact.isFavorite };
 
-      await axios.put(`https://${import.meta.env.VITE_BACKEND}/api/contacts/${contactId}`, updatedContact);
+      await axios.put(apiUrl(`/api/contacts/${contactId}`), updatedContact, { headers: getAuthHeaders() });
       setContacts((prevContacts) =>
         prevContacts.map((c) => (c._id === contactId ? { ...c, isFavorite: !c.isFavorite } : c))
       );
@@ -114,14 +116,14 @@ const PaymentContacts = () => {
       setLoading(true);
 
       if (paymentMethod === "wallet") {
-        const res = await axios.post(`https://${import.meta.env.VITE_BACKEND}/api/contacts/send-money`, {
-          userId: user?._id || localStorage.getItem("userId"),
+        const res = await axios.post(apiUrl(`/api/contacts/send-money`), {
+          userId: getUserId(),
           amount: Number(amount),
           paymentMethod: "wallet",
           contacts: selectedContacts
-        });
+        }, { headers: getAuthHeaders() });
 
-        if (res.data.message === "Amount sent successfully") {
+        if (res.data.success || res.data.message === "Money sent via wallet successfully") {
           toast.success("Amount sent from wallet successfully!");
           setAmount('');
           setSelectedContacts([]);
@@ -129,12 +131,12 @@ const PaymentContacts = () => {
           toast.error("Wallet transaction failed.");
         }
       } else if (paymentMethod === "razorpay") {
-        const res = await axios.post(`https://${import.meta.env.VITE_BACKEND}/api/contacts/send-money`, {
-          userId: user?._id || localStorage.getItem("userId"),
+        const res = await axios.post(apiUrl(`/api/contacts/send-money`), {
+          userId: getUserId(),
           amount: Number(amount),
           paymentMethod: "razorpay",
           contacts: selectedContacts
-        });
+        }, { headers: getAuthHeaders() });
 
         const { orderId, amount: orderAmount, currency } = res.data;
 
@@ -147,11 +149,11 @@ const PaymentContacts = () => {
           order_id: orderId,
           handler: async function (response) {
             try {
-              const verifyRes = await axios.post(`https://${import.meta.env.VITE_BACKEND}/api/contacts/verify-payment`, {
+              const verifyRes = await axios.post(apiUrl(`/api/contacts/verify-payment`), {
                 razorpay_payment_id: response.razorpay_payment_id,
                 razorpay_order_id: response.razorpay_order_id,
                 razorpay_signature: response.razorpay_signature,
-              });
+              }, { headers: getAuthHeaders() });
 
               if (verifyRes.data.message === "Payment verified successfully") {
                 toast.success("Payment via Razorpay successful!");
@@ -191,19 +193,27 @@ const PaymentContacts = () => {
   
   
   return (
-    <div className="dark:bg-gray-900 dark:text-white min-h-screen px-6 py-10">
+    <div className={`min-h-screen px-6 py-10 transition-colors duration-300 ${
+      darkMode
+        ? "bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white"
+        : "bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 text-gray-900"
+    }`}>
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <h2 className="text-3xl font-bold text-indigo-500 mb-8">Pay Contacts</h2>
 
         {/* Add Contact Section */}
         <motion.div
-          className="bg-gray-800 shadow-lg rounded-lg p-6 mb-6"
+          className={`shadow-lg rounded-lg p-6 mb-6 ${
+            darkMode ? "bg-gray-800" : "bg-white"
+          }`}
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
         >
-          <h3 className="text-lg font-semibold text-white mb-4">Add New Contact</h3>
+          <h3 className={`text-lg font-semibold mb-4 ${
+            darkMode ? "text-white" : "text-gray-900"
+          }`}>Add New Contact</h3>
           <div className="flex items-center space-x-4">
             <input
               type="text"

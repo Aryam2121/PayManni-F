@@ -1,3 +1,4 @@
+import { apiUrl, getAuthHeaders, getUserId } from "../utils/authStorage";
 import { useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -14,7 +15,7 @@ export default function PaymentSuccess() {
 
     const bookNow = async () => {
       try {
-        await axios.post(`https://${import.meta.env.VITE_BACKEND}/api/movies/book`, {
+        await axios.post(apiUrl(`/api/movies/book`), {
           movieId,
           userId,
           seatsBooked: seats.length,

@@ -1,7 +1,9 @@
+import { apiUrl, getAuthHeaders, getUserId } from "../utils/authStorage";
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useAuth } from "../context/AuthContext";
 import { FiTrash2, FiUserPlus, FiDollarSign } from "react-icons/fi";
+import PageShell from "./layout/PageShell";
 
 const GroupPaymentSplit = () => {
   const [amount, setAmount] = useState(0);
@@ -12,9 +14,8 @@ const GroupPaymentSplit = () => {
   const [error, setError] = useState("");
   const [walletBalance, setWalletBalance] = useState(null);
   const { user } = useAuth();
-  const userId = user?._id || localStorage.getItem("userId");
-
-  const API_URL = `https://${import.meta.env.VITE_BACKEND}/api`;
+  const userId = getUserId();
+  const hdrs = getAuthHeaders();
 
   useEffect(() => {
     fetchGroups();
@@ -22,7 +23,7 @@ const GroupPaymentSplit = () => {
 
   const fetchGroups = async () => {
     try {
-      const res = await axios.get(`${API_URL}/groups`);
+      const res = await axios.get(apiUrl("/api/groups"), { headers: hdrs });
       setGroups(res.data);
     } catch (error) {
       console.error("Error fetching groups", error);
@@ -32,11 +33,11 @@ const GroupPaymentSplit = () => {
   const createGroup = async () => {
     if (!newGroupName.trim() || !amount) return;
     try {
-      await axios.post(`${API_URL}/create-group`, {
+      await axios.post(apiUrl("/api/create-group"), {
         name: newGroupName,
         totalAmount: amount,
         userId,
-      });
+      }, { headers: hdrs });
       setNewGroupName("");
       setAmount(0);
       fetchGroups();
@@ -48,10 +49,10 @@ const GroupPaymentSplit = () => {
   const addUserToGroup = async () => {
     if (!selectedGroup || !newUser.trim()) return;
     try {
-      await axios.post(`${API_URL}/add-user`, {
+      await axios.post(apiUrl("/api/add-user"), {
         groupId: selectedGroup._id,
         userName: newUser,
-      });
+      }, { headers: hdrs });
       setNewUser("");
       fetchGroups();
     } catch (error) {
@@ -61,10 +62,10 @@ const GroupPaymentSplit = () => {
 
   const removeUserFromGroup = async (userName) => {
     try {
-      await axios.post(`${API_URL}/remove-user`, {
+      await axios.post(apiUrl("/api/remove-user"), {
         groupId: selectedGroup._id,
         userName,
-      });
+      }, { headers: hdrs });
       fetchGroups();
     } catch (error) {
       console.error("Error removing user", error);
@@ -75,9 +76,9 @@ const GroupPaymentSplit = () => {
 const splitPayments = async () => {
   if (selectedGroup && selectedGroup._id) {
     try {
-      await axios.post(`${API_URL}/split-payment`, {
+      await axios.post(apiUrl("/api/split-payment"), {
         groupId: selectedGroup._id,
-      });
+      }, { headers: hdrs });
       fetchGroups(); // Reload the groups after splitting payment
     } catch (error) {
       console.error("Error splitting payment", error);
@@ -87,20 +88,13 @@ const splitPayments = async () => {
   }
 };
 
-// useEffect to call splitPayments when selectedGroup changes
-useEffect(() => {
-  if (selectedGroup) {
-    splitPayments();
-  }
-}, [selectedGroup]); // This effect runs only when selectedGroup changes
-
 
 const createRazorpayOrder = async (userName, group) => {
   try {
-    const { data } = await axios.post(`${API_URL}/create-order`, {
+    const { data } = await axios.post(apiUrl("/api/create-order"), {
       groupId: group._id,
       userName,
-    });
+    }, { headers: hdrs });
 
     const options = {
       key: import.meta.env.VITE_RAZORPAY_KEY_ID,
@@ -130,14 +124,14 @@ const createRazorpayOrder = async (userName, group) => {
 
   const verifyPayment = async (response, userName, method) => {
     try {
-      await axios.post(`${API_URL}/verify-payment`, {
+      await axios.post(apiUrl("/api/verify-payment"), {
         razorpay_order_id: response.razorpay_order_id,
         razorpay_payment_id: response.razorpay_payment_id,
         razorpay_signature: response.razorpay_signature,
         groupId: selectedGroup._id,
         userName,
         method,
-      });
+      }, { headers: hdrs });
       fetchGroups();
       alert("Payment successful!");
     } catch (error) {
@@ -147,10 +141,10 @@ const createRazorpayOrder = async (userName, group) => {
 
   const payWithWallet = async (userName) => {
     try {
-      const res = await axios.post(`${API_URL}/checkWalletBalance`, {
+      const res = await axios.post(apiUrl("/api/checkWalletBalance"), {
         groupId: selectedGroup._id,
         userName,
-      });
+      }, { headers: hdrs });
 
       if (res.data.canPayWithWallet) {
         await verifyPayment({}, userName, "wallet");
@@ -164,7 +158,7 @@ const createRazorpayOrder = async (userName, group) => {
 
   const viewGroupTransactions = async () => {
     try {
-      const res = await axios.get(`${API_URL}/group-transactions/${selectedGroup._id}`);
+      const res = await axios.get(apiUrl(`/api/group-transactions/${selectedGroup._id}`), { headers: hdrs });
       console.log("Group Transactions:", res.data.transactions);
       // You can display these in a modal or table
     } catch (error) {
@@ -173,10 +167,8 @@ const createRazorpayOrder = async (userName, group) => {
   };
 
   return (
-    <div className="p-6  bg-gradient-to-br from-gray-900 via-gray-950 to-black min-h-screen text-white">
-      <h2 className="text-4xl font-bold mb-8 text-center text-indigo-400 drop-shadow-md">
-        💸 Group Payment Split
-      </h2>
+    <PageShell title="Split Payment" subtitle="Create groups and split bills with friends" maxWidth="max-w-5xl">
+    <div className="text-white space-y-6">
 
       {/* Create Group Inputs */}
       <div className="flex flex-col md:flex-row items-center gap-4 mb-8 bg-black/20 p-4 rounded-xl backdrop-blur-md border border-gray-700">
@@ -315,6 +307,7 @@ const createRazorpayOrder = async (userName, group) => {
         ))}
       </div>
     </div>
+    </PageShell>
   );
 };
 

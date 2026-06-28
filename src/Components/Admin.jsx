@@ -1,3 +1,4 @@
+import { apiUrl, getAuthHeaders, getUserId } from "../utils/authStorage";
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { FaUsers, FaWallet, FaChartLine } from 'react-icons/fa';
@@ -8,9 +9,9 @@ function Admin() {
   const [analytics, setAnalytics] = useState({});
 
   useEffect(() => {
-    axios.get(`https://${import.meta.env.VITE_BACKEND}/api/admin/users`).then(res => setUsers(res.data));
-    axios.get(`https://${import.meta.env.VITE_BACKEND}/api/admin/transactions`).then(res => setTransactions(res.data));
-    axios.get(`https://${import.meta.env.VITE_BACKEND}/api/admin/analytics`).then(res => setAnalytics(res.data));
+    axios.get(apiUrl(`/api/admin/users`)).then(res => setUsers(res.data));
+    axios.get(apiUrl(`/api/admin/transactions`)).then(res => setTransactions(res.data));
+    axios.get(apiUrl(`/api/admin/analytics`)).then(res => setAnalytics(res.data));
   }, []);
 
   return (

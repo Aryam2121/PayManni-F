@@ -1,10 +1,11 @@
+import { apiUrl, getAuthHeaders, getUserId } from "../utils/authStorage";
 import { useEffect, useState } from "react";
 
 const PaymentPage = () => {
   const [order, setOrder] = useState(null);
 
   const fetchOrder = async () => {
-    const response = await fetch(`https://${import.meta.env.VITE_BACKEND}/create-order`, {
+    const response = await fetch(apiUrl(`/create-order`), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ amount: 500 }), // ₹500
@@ -24,7 +25,7 @@ const PaymentPage = () => {
       description: "Premium Subscription",
       order_id: order.id,
       handler: async function (response) {
-        const verifyResponse = await fetch(`https://${import.meta.env.VITE_BACKEND}/verify-payment`, {
+        const verifyResponse = await fetch(apiUrl(`/verify-payment`), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(response),

@@ -1,25 +1,33 @@
-import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
-import { FaPlane, FaTrain, FaBus,FaWallet, FaCreditCard, FaRegMoneyBillAlt, FaHistory, FaGift, FaQrcode, FaHeadset, FaDollarSign, FaRegBell, FaUserCircle, FaBalanceScale, FaVimeoV, FaFilm } from "react-icons/fa";
-import { motion } from "framer-motion";  
+import { apiUrl, getAuthHeaders, getUserId } from "../utils/authStorage";
+import { useState, useEffect } from "react";
+import { FaPlane, FaTrain, FaBus, FaWallet, FaRegMoneyBillAlt, FaQrcode, FaHeadset, FaUserCircle, FaBalanceScale, FaEye, FaEyeSlash } from "react-icons/fa";
+import { MdMovie, MdNotifications, MdClose, MdPayment } from "react-icons/md";
+import { HiLightningBolt, HiCash } from "react-icons/hi";
+import { BiTransfer } from "react-icons/bi";
+import { motion, AnimatePresence } from "framer-motion";  
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useNavigate } from "react-router-dom";
 import boy from "../assets/boy.png"
-import { MdMovie } from "react-icons/md";
 import { useAuth } from "../context/AuthContext";
+import { useTheme } from "../context/ThemeContext";
+
 import axios from "axios";
 
 const Home = () => {
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
-  const [transactions, setTransactions] = useState([]);
-  const [darkMode, setDarkMode] = useState(true);
+  const { darkMode } = useTheme();
+
   const [chatOpen, setChatOpen] = useState(false);
-  const [offers, setOffers] = useState([]);
-  const [notifications, setNotifications] = useState([]);
+  const [balanceVisible, setBalanceVisible] = useState(true);
+  const [notifications, setNotifications] = useState([
+    { id: 1, message: " Cashback of ₹50 credited", time: "2 min ago", type: "success" },
+    { id: 2, message: " Bill payment due tomorrow", time: "1 hour ago", type: "warning" }
+  ]);
   const [loanAmount, setLoanAmount] = useState(0);
   const [accountDetails, setAccountDetails] = useState(null);
+  const [showNotifications, setShowNotifications] = useState(false);
 
   const navigate = useNavigate();
   
@@ -27,21 +35,16 @@ const Home = () => {
     const fetchAccountDetails = async () => {
       try {
         // Check if user is available from context or localStorage
-        const userId = user?._id || localStorage.getItem("userId");
+        const userId = getUserId();
         
         if (!userId) {
-          console.warn("⚠️ No userId found");
-          // Optionally, redirect to login page or handle accordingly
           navigate("/login");
           return;
         }
-  
-        console.log("User from context:", user);
-        console.log("UserId from localStorage:", userId);
-  
-        // Make API call to fetch account details
+
         const res = await axios.get(
-          `https://${import.meta.env.VITE_BACKEND}/api/myaccount/${userId}`
+          apiUrl(`/api/myaccount/${userId}`),
+          { headers: getAuthHeaders() }
         );
   
         setAccountDetails(res.data);
@@ -64,528 +67,401 @@ const Home = () => {
   
   const { logout } = useAuth();
 
-  const toggleDarkMode = () => setDarkMode(!darkMode);
   const toggleChat = () => setChatOpen(!chatOpen);
-  
-  const notify = (message) => {
-    toast(message);
-  };
 
   const handleLoanApplication = () => {
     if (loanAmount <= 0) {
       toast.error("Please enter a valid loan amount.");
       return;
     }
-    toast.success(`Loan Approved! ₹${loanAmount} added to your wallet.`);
-    setUser((prev) => ({ ...prev, balance: prev.balance + loanAmount }));
+    toast.success(`Loan application submitted for ₹${loanAmount}!`);
   };
 
-  const handleOfferClaim = (index) => {
-    setOffers((prevOffers) => {
-      const updatedOffers = [...prevOffers];
-      updatedOffers[index].claimed = true;
-      return updatedOffers;
-    });
-    toast.success(`Offer '${offers[index].name}' Claimed!`);
-  };
-
-  const clearNotifications = () => {
-    setNotifications([]);
-    toast.info("All notifications cleared.");
-  };
   const handleLogout = () => {
-    logout();             // clears user + token
-    // ✅ Clear user state
-    navigate("/login-user");                        // ✅ Navigate to login
+    logout();
+    navigate("/login-user");
   };
   
   return (
-    <div className={`min-h-screen ${darkMode ? 'bg-gray-900 text-white' : 'bg-gradient-to-r from-blue-50 via-indigo-100 to-blue-50'} p-6`}>
-      <div className="">
-         {/* Welcome Header */}
-         <motion.h2
-  className="text-5xl font-[cursive] text-center mb-6 text-white drop-shadow-xl transition-all duration-500 italic"
-  initial={{ opacity: 0, y: -20 }}
-  animate={{ opacity: 1, y: 0 }}
-  transition={{ duration: 1 }}
->
-  Welcome to <span className="text-blue-400 font-bold tracking-wide italic">PayManni</span>
-</motion.h2>
+    <div className={`min-h-screen transition-all duration-300 ${
+      darkMode 
+        ? 'bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900' 
+        : 'bg-gradient-to-br from-blue-50 via-white to-indigo-50'
+    }`}>
+      {/* Header Section */}
+      <div className="relative">
+        {/* Background Pattern */}
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-purple-600 opacity-90"></div>
 
-
-    {/* Dark Mode Toggle */}
-    <div className="flex justify-end">
-      <motion.button
-        onClick={toggleDarkMode}
-        className="px-5 py-2 rounded-full text-white transition-all duration-300 shadow-md hover:shadow-lg focus:outline-none"
-        whileHover={{ scale: 1.05 }}
-        style={{
-          backgroundColor: darkMode ? "#facc15" : "#1e293b",
-          color: darkMode ? "#1e293b" : "#fff"
-        }}
-      >
-        {darkMode ? "☀ Light Mode" : "🌙 Dark Mode"}
-      </motion.button>
-    </div>
-
-    {/* User Info Section */}
-    {!loading ? (
-     <motion.div
-     className={`mt-6 p-6 rounded-xl shadow-md transition-all duration-300 flex items-center justify-between ${
-       darkMode ? "bg-gray-800 text-white shadow-gray-700" : "bg-white text-gray-900 shadow-lg"
-     }`}
-     initial={{ opacity: 0, y: -20 }}
-     animate={{ opacity: 1, y: 0 }}
-     transition={{ delay: 0.5, duration: 0.7 }}
-   >
-     {/* Left: Profile & QR Code */}
-     <div className="flex items-center space-x-4">
-       <img src={user?.profilePic || boy} alt="Profile" className="w-16 h-16 rounded-full shadow-md border-2 border-gray-300" />
-       {/* ✅ QR Code Button with Navigation */}
-       <button
-         onClick={() => navigate("/qr-scanner")}
-         className="p-3 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition duration-300 shadow-md"
-       >
-         <FaQrcode className="text-2xl" />
-       </button>
-     </div>
-
-     {/* Right: User Info */}
-     <div className="text-right">
-       <h3 className="text-2xl font-bold"> Welcome, {accountDetails?.name || "User"}</h3>
-       <p className="mt-1 text-gray-400">
-         Balance: <span className="text-green-400 font-semibold"> ₹{accountDetails?.balance ?? "Loading..."}
-         </span>
-       </p>
-       <button
- onClick={handleLogout}
-          className="mt-4 px-5 py-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition duration-300 shadow-md"
-       >
-         Logout
-       </button>
-     </div>
-   </motion.div>
- ) : (
-   <div className="mt-6 flex justify-center">
-     <div className="animate-spin rounded-full border-4 border-t-4 border-blue-500 h-16 w-16"></div>
-   </div>
-  )}
-  
-        {/* Notifications
-    <div className="mt-6">
-      <h4 className="text-xl font-semibold">🔔 Notifications</h4>
-      <button
-        onClick={clearNotifications}
-        className="mt-2 px-4 py-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition duration-300"
-      >
-        Clear All Notifications
-      </button>
-      {notifications.length > 0 ? (
-        notifications.map((notification, index) => (
-          <motion.div
-            key={index}
-            className={`mt-4 p-4 rounded-xl shadow-md ${darkMode ? "bg-gray-800 text-white" : "bg-white text-gray-900"}`}
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1.2 + index * 0.2, duration: 0.5 }}
-          >
-            <div className="flex items-center">
-              <FaRegBell className="text-xl text-gray-500 mr-2" />
-              <span>{notification.message}</span>
-            </div>
-          </motion.div>
-        ))
-      ) : (
-        <p className="mt-4 text-gray-500">No new notifications.</p>
-      )}
-    </div> */}
-         {/* Exclusive Offers
-    <div className="mt-6">
-      <h4 className="text-xl font-semibold">🎁 Exclusive Offers</h4>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-4">
-        {offers.map((offer, index) => (
-          <motion.div
-            key={index}
-            className={`p-4 rounded-xl shadow-lg transition-all duration-300 transform hover:scale-105 ${
-              offer.claimed ? "bg-gray-400 text-white" : darkMode ? "bg-gray-800 text-white" : "bg-white text-gray-900"
-            }`}
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1.5 + index * 0.2, duration: 0.5 }}
-          >
-            <h5 className="text-lg font-semibold">{offer.name}</h5>
-            <p className="mt-2">Get ₹{offer.discount} cashback!</p>
-            {!offer.claimed ? (
-              <button
-                onClick={() => handleOfferClaim(index)}
-                className="mt-4 px-5 py-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition duration-300 shadow-md"
-              >
-                Claim Offer
-              </button>
-            ) : (
-              <span className="mt-4 text-green-400 font-semibold">Claimed</span>
-            )}
-          </motion.div>
-        ))}
-      </div>
-    </div> */}
-
-
-  
-        {/* Feature Cards */}
-<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-10">
-  
-  {/* Card Example: Recharge */}
-  <motion.div
-    className={`flex flex-col items-center shadow-lg rounded-3xl p-6 hover:shadow-2xl transition-all duration-300 ease-in-out transform hover:scale-105 ${darkMode ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white" : "bg-gradient-to-r from-blue-400 to-blue-500 text-white"}`}
-    initial={{ opacity: 0 }}
-    animate={{ opacity: 1 }}
-    transition={{ delay: 0.5, duration: 0.5 }}
-  >
-    <FaWallet className="text-5xl text-white" />
-    <h3 className="text-2xl font-bold mt-4">Recharge</h3>
-    <p className="text-gray-200">Add balance to your wallet.</p>
-    <Link
-      to="/recharge"
-      className="mt-4 bg-blue-700 text-white py-3 px-6 rounded-full hover:bg-blue-800 transition duration-200"
-    >
-      Go to Recharge
-    </Link>
-  </motion.div>
-           {/* Card 2: Pay Bills */}
-  <motion.div
-    className={`flex flex-col items-center shadow-lg rounded-3xl p-6 hover:shadow-2xl transition duration-300 ease-in-out transform hover:scale-105 ${darkMode ? "bg-gradient-to-r from-green-600 to-green-500 text-white" : "bg-gradient-to-r from-green-400 to-green-500 text-white"}`}
-    initial={{ opacity: 0 }}
-    animate={{ opacity: 1 }}
-    transition={{ delay: 0.7, duration: 0.5 }}
-  >
-    <FaRegMoneyBillAlt className="text-5xl text-white" />
-    <h3 className="text-2xl font-bold mt-4">Pay Bills</h3>
-    <p className="text-gray-200">Pay your utility bills easily.</p>
-    <Link
-      to="/pay-bills"
-      className="mt-4 bg-green-700 text-white py-3 px-6 rounded-full hover:bg-green-800 transition duration-200"
-    >
-      Go to Bills
-    </Link>
-  </motion.div>
-
-  {/* Card 3: Money Transfer */}
-  <motion.div
-    className={`flex flex-col items-center shadow-lg rounded-3xl p-6 hover:shadow-2xl transition duration-300 ease-in-out transform hover:scale-105 ${darkMode ? "bg-gradient-to-r from-purple-600 to-purple-500 text-white" : "bg-gradient-to-r from-purple-400 to-purple-500 text-white"}`}
-    initial={{ opacity: 0 }}
-    animate={{ opacity: 1 }}
-    transition={{ delay: 0.9, duration: 0.5 }}
-  >
-    <FaCreditCard className="text-5xl text-white" />
-    <h3 className="text-2xl font-bold mt-4">Transfer Money</h3>
-    <p className="text-gray-200">Send money to anyone instantly.</p>
-    <Link
-      to="/transfer"
-      className="mt-4 bg-purple-700 text-white py-3 px-6 rounded-full hover:bg-purple-800 transition duration-200"
-    >
-      Send Money
-    </Link>
-  </motion.div>
-
-  {/* Card 4: Pay Contacts */}
-  <motion.div
-    className={`flex flex-col items-center shadow-lg rounded-3xl p-6 hover:shadow-2xl transition duration-300 ease-in-out transform hover:scale-105 ${darkMode ? "bg-gradient-to-r from-green-600 to-green-500 text-white" : "bg-gradient-to-r from-green-400 to-green-500 text-white"}`}
-    initial={{ opacity: 0 }}
-    animate={{ opacity: 1 }}
-    transition={{ delay: 1.1, duration: 0.5 }}
-  >
-    <FaUserCircle className="text-5xl text-white" />
-    <h3 className="text-2xl font-bold mt-4">Pay Contacts</h3>
-    <p className="text-gray-200">Pay your Contacts easily.</p>
-    <Link
-      to="/pay-contacts"
-      className="mt-4 bg-green-700 text-white py-3 px-6 rounded-full hover:bg-green-800 transition duration-200"
-    >
-      Go to Contacts
-    </Link>
-  </motion.div>
-  
-          {/* Card 4: Balance&History*/}
-          <motion.div
-                className={`flex flex-col items-center shadow-lg rounded-3xl p-6 hover:shadow-2xl transition duration-300 ease-in-out transform hover:scale-105 ${darkMode ? "bg-gradient-to-r from-purple-600 to-purple-500 text-white" : "bg-gradient-to-r from-purple-400 to-purple-500 text-white"}`}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 1.7, duration: 0.5 }}
-          >
-            <FaBalanceScale className="text-5xl text-white" />
-            <h3 className="text-2xl font-bold mt-4">Balance&History</h3>
-            <p className="text-gray-200">Check Balance&History.</p>
-            <Link
-              to="/balance-history"
-              className="mt-4 bg-purple-700 text-white py-3 px-6 rounded-full hover:bg-green-800 transition duration-200"
+        {/* Header Content */}
+        <div className="relative z-10 px-6 py-8">
+          {/* Top Bar */}
+          <div className="flex justify-between items-center mb-8">
+            <motion.div 
+              className="flex items-center space-x-3"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6 }}
             >
-              Balance&History
-            </Link>
-          </motion.div>
-         {/* Card 1: Flight Booking */}
-<motion.div
-   className={`flex flex-col items-center shadow-lg rounded-3xl p-6 hover:shadow-2xl transition duration-300 ease-in-out transform hover:scale-105 ${darkMode ? "bg-gradient-to-r from-green-600 to-green-500 text-white" : "bg-gradient-to-r from-green-400 to-green-500 text-white"}`}
-  initial={{ opacity: 0 }}
-  animate={{ opacity: 1 }}
-  transition={{ delay: 0.5, duration: 0.5 }}
->
-  <FaPlane className="text-5xl text-white" />
-  <h3 className="text-2xl font-bold mt-4">Check Flights</h3>
-  <p className="text-gray-200">Flight Booking</p>
-  <Link
-    to="/flight-booking"
-    className="mt-4 bg-green-700 text-white py-3 px-6 rounded-full hover:bg-green-800 transition duration-200"
-  >
-    Flight Booking
-  </Link>
-</motion.div>
+              <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-lg">
+                <span className="text-blue-600 font-bold text-xl">P</span>
+              </div>
+              <h1 className="text-2xl font-bold text-white">PayManni</h1>
+            </motion.div>
 
-{/* Card 2: Train Booking */}
-<motion.div
-      className={`flex flex-col items-center shadow-lg rounded-3xl p-6 hover:shadow-2xl transition duration-300 ease-in-out transform hover:scale-105 ${darkMode ? "bg-gradient-to-r from-purple-600 to-purple-500 text-white" : "bg-gradient-to-r from-purple-400 to-purple-500 text-white"}`}
-  initial={{ opacity: 0 }}
-  animate={{ opacity: 1 }}
-  transition={{ delay: 1.0, duration: 0.5 }}
->
-  <FaTrain className="text-5xl text-white" />
-  <h3 className="text-2xl font-bold mt-4">Train Booking</h3>
-  <p className="text-gray-200">Check Trains</p>
-  <Link
-    to="/train-booking"
-     className="mt-4 bg-purple-700 text-white py-3 px-6 rounded-full hover:bg-green-800 transition duration-200"
-  >
-    Check Trains
-  </Link>
-</motion.div>
+            <div className="flex items-center space-x-4">
+              {/* Notifications */}
+              <motion.button
+                onClick={() => setShowNotifications(!showNotifications)}
+                className="relative p-2 bg-white/20 backdrop-blur-sm rounded-full hover:bg-white/30 transition-all duration-300"
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+              >
+                <MdNotifications className="text-white text-xl" />
+                {notifications.length > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                    {notifications.length}
+                  </span>
+                )}
+              </motion.button>
 
-{/* Card 3: Bus Booking */}
-<motion.div
-      className={`flex flex-col items-center shadow-lg rounded-3xl p-6 hover:shadow-2xl transition duration-300 ease-in-out transform hover:scale-105 ${darkMode ? "bg-gradient-to-r from-green-600 to-green-500 text-white" : "bg-gradient-to-r from-green-400 to-green-500 text-white"}`}
-  initial={{ opacity: 0 }}
-  animate={{ opacity: 1 }}
-  transition={{ delay: 1.5, duration: 0.5 }}
->
-  <FaBus className="text-5xl text-white" />
-  <h3 className="text-2xl font-bold mt-4">Bus Booking</h3>
-  <p className="text-gray-200">Check Buses</p>
-  <Link
-    to="/bus-booking"
-    className="mt-4 bg-green-600 text-white py-2 px-4 rounded-full hover:bg-green-700 transition duration-200"
-  >
-    Bus Booking
-  </Link>
-</motion.div>
-
-  
-          {/* Card 5: QR Code Payments */}
-          <motion.div
-    className={`flex flex-col items-center shadow-lg rounded-3xl p-6 hover:shadow-2xl transition duration-300 ease-in-out transform hover:scale-105 ${darkMode ? "bg-gradient-to-r from-purple-600 to-purple-500 text-white" : "bg-gradient-to-r from-purple-400 to-purple-500 text-white"}`}
-    initial={{ opacity: 0 }}
-    animate={{ opacity: 1 }}
-    transition={{ delay: 1.3, duration: 0.5 }}
-  >
-    <FaQrcode className="text-5xl text-white" />
-    <h3 className="text-2xl font-bold mt-4">QR Payments</h3>
-    <p className="text-gray-200">Pay quickly using QR codes.</p>
-    <Link
-      to="/qr-scanner"
-      className="mt-4 bg-purple-700 text-white py-3 px-6 rounded-full hover:bg-green-800 transition duration-200"
-    >
-      Scan & Pay
-    </Link>
-  </motion.div>
-  {/* Card 6: Movies Booking */}
-<motion.div
-      className={`flex flex-col items-center shadow-lg rounded-3xl p-6 hover:shadow-2xl transition duration-300 ease-in-out transform hover:scale-105 ${darkMode ? "bg-gradient-to-r from-green-600 to-green-500 text-white" : "bg-gradient-to-r from-green-400 to-green-500 text-white"}`}
-  initial={{ opacity: 0 }}
-  animate={{ opacity: 1 }}
-  transition={{ delay: 1.5, duration: 0.5 }}
->
-  <MdMovie className="text-5xl text-white" />
-  <h3 className="text-2xl font-bold mt-4">Book Movies</h3>
-  <p className="text-gray-200">Movies</p>
-  <Link
-    to="/movies"
-    className="mt-4 bg-green-600 text-white py-2 px-4 rounded-full hover:bg-green-700 transition duration-200"
-  >
-    Movies Booking
-  </Link>
-</motion.div>
-        </div>
-        {/* Feature Cards */}
-{/* <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-10">
-  {[
-    {
-      icon: <FaWallet className="text-6xl text-white" />,
-      title: "Recharge",
-      description: "Add balance to your wallet.",
-      link: "/recharge",
-      bgClass: "bg-gradient-to-r from-blue-600 to-blue-500",
-      delay: 0.5,
-    },
-    {
-      icon: <FaRegMoneyBillAlt className="text-6xl text-white" />,
-      title: "Pay Bills",
-      description: "Pay your utility bills easily.",
-      link: "/pay-bills",
-      bgClass: "bg-gradient-to-r from-green-600 to-green-500",
-      delay: 0.7,
-    },
-    {
-      icon: <FaCreditCard className="text-6xl text-white" />,
-      title: "Transfer Money",
-      description: "Send money to anyone instantly.",
-      link: "/transfer",
-      bgClass: "bg-gradient-to-r from-purple-600 to-purple-500",
-      delay: 0.9,
-    },
-    {
-      icon: <FaUserCircle className="text-6xl text-white" />,
-      title: "Pay Contacts",
-      description: "Pay your contacts easily.",
-      link: "/payContacts",
-      bgClass: "bg-gradient-to-r from-green-600 to-green-500",
-      delay: 1.1,
-    },
-    {
-      icon: <FaBalanceScale className="text-6xl text-white" />,
-      title: "Balance & History",
-      description: "Check Balance & History.",
-      link: "/balanceHis",
-      bgClass: "bg-gradient-to-r from-purple-600 to-purple-500",
-      delay: 1.7,
-    },
-    {
-      icon: <FaPlane className="text-6xl text-white" />,
-      title: "Check Flights",
-      description: "Flight Booking",
-      link: "/flight-booking",
-      bgClass: "bg-gradient-to-r from-green-600 to-green-500",
-      delay: 0.5,
-    },
-    {
-      icon: <FaTrain className="text-6xl text-white" />,
-      title: "Train Booking",
-      description: "Check Trains",
-      link: "/train-booking",
-      bgClass: "bg-gradient-to-r from-purple-600 to-purple-500",
-      delay: 1.0,
-    },
-    {
-      icon: <FaBus className="text-6xl text-white" />,
-      title: "Bus Booking",
-      description: "Check Buses",
-      link: "/bus-booking",
-      bgClass: "bg-gradient-to-r from-green-600 to-green-500",
-      delay: 1.5,
-    },
-    {
-      icon: <FaQrcode className="text-6xl text-white" />,
-      title: "QR Payments",
-      description: "Pay quickly using QR codes.",
-      link: "/qr-scanner",
-      bgClass: "bg-gradient-to-r from-purple-600 to-purple-500",
-      delay: 1.3,
-    },
-  ].map((card, index) => (
-    <motion.div
-      key={index}
-      className={`flex flex-col items-center shadow-xl rounded-3xl p-6 hover:shadow-2xl transition-all duration-300 ease-in-out transform hover:scale-105 ${card.bgClass} text-white`}
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ delay: card.delay, duration: 0.5 }}
-    >
-      {card.icon}
-      <h3 className="text-2xl font-semibold mt-4">{card.title}</h3>
-      <p className="text-gray-200 text-center">{card.description}</p>
-      <Link
-        to={card.link}
-        className="mt-4 bg-opacity-90 bg-black text-white py-3 px-6 rounded-full hover:bg-opacity-100 transition duration-200"
-      >
-        {card.title}
-      </Link>
-    </motion.div>
-  ))}
-</div> */}
-
-          {/* Instant Loan Application */}
-<div
-  className={`mt-8 p-6 rounded-xl shadow-xl transition-all duration-300 ${darkMode ? "bg-gray-800 text-white" : "bg-white text-gray-900"}`}
->
-  <motion.h4
-    className="text-2xl font-semibold tracking-tight"
-    initial={{ opacity: 0 }}
-    animate={{ opacity: 1 }}
-    transition={{ delay: 0.5, duration: 0.7 }}
-  >
-    💰 Instant Loan Application
-  </motion.h4>
-  <p className="mt-2 text-gray-500 dark:text-gray-400">
-    Apply for an instant loan of up to ₹5000. Fast, simple, and hassle-free!
-  </p>
-  <div className="mt-4 space-y-4">
-    <div className="relative">
-      <input
-        type="number"
-        value={loanAmount}
-        onChange={(e) => setLoanAmount(e.target.value)}
-        className="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:focus:ring-blue-300 transition-all duration-300"
-        placeholder="Enter loan amount"
-      />
-      <div className="absolute top-0 right-0 mt-3 mr-4 text-gray-500 dark:text-gray-300">
-        ₹
-      </div>
-    </div>
-    <button
-  onClick={() => {
-    handleLoanApplication();      // First call your loan logic
-    navigate("/loan-application"); // Then navigate to the loan page
-  }}
-  className="w-full px-6 py-3 bg-purple-500 text-white rounded-lg shadow-md hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-yellow-400 transition-all duration-300"
->
-  Apply for Loan
-</button>
-
-  </div>
-  <div className="mt-4 flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
-    <span>Need assistance? </span>
-    <a href="/customer-support" className="underline text-yellow-500 hover:text-yellow-600">
-      Call Support
-    </a>
-  </div>
-</div>
-
-
-        {/* Chat Section */}
-        <motion.div
-          className={`fixed bottom-4 right-4 p-4 rounded-full shadow-lg transition-all ${
-            chatOpen ? 'bg-white h-64 w-72' : 'bg-blue-600 h-12 w-12'
-          }`}
-          onClick={toggleChat}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 2.5, duration: 0.5 }}
-        >
-          {chatOpen ? (
-            <div className="relative h-full">
-              <h4 className="text-lg font-semibold text-gray-700">Support Chat</h4>
-              <textarea
-                className="w-full h-32 mt-2 p-2 border-2 border-gray-300 rounded-lg"
-                placeholder="Type your message..."
-              ></textarea>
-              <button className="absolute bottom-2 right-2 bg-blue-600 text-white py-1 px-4 rounded-lg hover:bg-blue-700 transition duration-200">
-                Send
-              </button>
+              {/* Dark Mode Toggle is now in the header */}
             </div>
+          </div>
+
+          {/* Balance Card */}
+          {!loading ? (
+            <motion.div
+              className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 shadow-xl border border-white/20"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.2 }}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center space-x-3">
+                  <img 
+                    src={user?.profilePic || boy} 
+                    alt="Profile" 
+                    className="w-12 h-12 rounded-full border-2 border-white/30 shadow-lg" 
+                  />
+                  <div>
+                    <h2 className="text-white font-semibold text-lg">
+                      Hello, {accountDetails?.name || "User"}!
+                    </h2>
+                    <p className="text-white/70 text-sm">Welcome back</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setBalanceVisible(!balanceVisible)}
+                  className="p-2 hover:bg-white/20 rounded-full transition-all duration-300"
+                >
+                  {balanceVisible ? <FaEye className="text-white" /> : <FaEyeSlash className="text-white" />}
+                </button>
+              </div>
+
+              <div className="mb-6">
+                <p className="text-white/70 text-sm mb-1">Available Balance</p>
+                <div className="flex items-center space-x-2">
+                  <span className="text-3xl font-bold text-white">
+                    {balanceVisible ? `₹${accountDetails?.balance || 0}` : "₹****"}
+                  </span>
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                    className="w-6 h-6 border-2 border-green-400 border-t-transparent rounded-full"
+                  />
+                </div>
+              </div>
+
+              {/* Quick Actions */}
+              <div className="grid grid-cols-4 gap-4">
+                {[
+                  { icon: <BiTransfer className="text-xl" />, label: "Send", path: "/transfer" },
+                  { icon: <MdPayment className="text-xl" />, label: "Pay", path: "/pay-bills" },
+                  { icon: <FaQrcode className="text-xl" />, label: "Scan", path: "/qr-scanner" },
+                  { icon: <FaWallet className="text-xl" />, label: "Recharge", path: "/recharge" }
+                ].map((action, index) => (
+                  <motion.button
+                    key={index}
+                    onClick={() => navigate(action.path)}
+                    className="flex flex-col items-center p-3 bg-white/20 backdrop-blur-sm rounded-xl hover:bg-white/30 transition-all duration-300"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: 0.4 + index * 0.1 }}
+                  >
+                    <div className="text-white mb-1">{action.icon}</div>
+                    <span className="text-white text-xs font-medium">{action.label}</span>
+                  </motion.button>
+                ))}
+              </div>
+            </motion.div>
           ) : (
-            <FaHeadset className="text-2xl text-white" />
+            <div className="flex justify-center">
+              <div className="animate-spin rounded-full border-4 border-t-4 border-white h-16 w-16"></div>
+            </div>
           )}
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="px-6 -mt-4 relative z-10">
+        {/* Services Grid */}
+        <motion.div
+          className="mb-8"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.6 }}
+        >
+          <h3 className={`text-xl font-bold mb-6 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+            Services
+          </h3>
+          
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {[
+              {
+                icon: <FaPlane className="text-2xl" />,
+                title: "Flights",
+                subtitle: "Book flights",
+                path: "/flight-booking",
+                gradient: "from-blue-500 to-blue-600",
+                delay: 0.1
+              },
+              {
+                icon: <FaTrain className="text-2xl" />,
+                title: "Trains", 
+                subtitle: "Book trains",
+                path: "/train-booking",
+                gradient: "from-green-500 to-green-600",
+                delay: 0.2
+              },
+              {
+                icon: <FaBus className="text-2xl" />,
+                title: "Bus",
+                subtitle: "Book buses", 
+                path: "/bus-booking",
+                gradient: "from-orange-500 to-orange-600",
+                delay: 0.3
+              },
+              {
+                icon: <MdMovie className="text-2xl" />,
+                title: "Movies",
+                subtitle: "Book tickets",
+                path: "/movies",
+                gradient: "from-purple-500 to-purple-600", 
+                delay: 0.4
+              },
+              {
+                icon: <FaRegMoneyBillAlt className="text-2xl" />,
+                title: "Bills",
+                subtitle: "Pay bills",
+                path: "/pay-bills",
+                gradient: "from-red-500 to-red-600",
+                delay: 0.5
+              },
+              {
+                icon: <FaUserCircle className="text-2xl" />,
+                title: "Contacts",
+                subtitle: "Pay contacts",
+                path: "/pay-contacts", 
+                gradient: "from-indigo-500 to-indigo-600",
+                delay: 0.6
+              },
+              {
+                icon: <FaBalanceScale className="text-2xl" />,
+                title: "History",
+                subtitle: "View transactions",
+                path: "/balance-history",
+                gradient: "from-teal-500 to-teal-600",
+                delay: 0.7
+              },
+              {
+                icon: <HiLightningBolt className="text-2xl" />,
+                title: "Loans",
+                subtitle: "Apply for loan",
+                path: "/loan-application",
+                gradient: "from-yellow-500 to-yellow-600",
+                delay: 0.8
+              }
+            ].map((service, index) => (
+              <motion.div
+                key={index}
+                onClick={() => navigate(service.path)}
+                className={`bg-gradient-to-r ${service.gradient} rounded-2xl p-4 shadow-lg cursor-pointer hover:shadow-xl transition-all duration-300 transform hover:scale-105`}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: service.delay }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <div className="text-white mb-3">{service.icon}</div>
+                <h4 className="text-white font-semibold text-sm">{service.title}</h4>
+                <p className="text-white/80 text-xs">{service.subtitle}</p>
+              </motion.div>
+            ))}
+          </div>
+        </motion.div>
+
+        {/* Instant Loan Section */}
+        <motion.div
+          className={`rounded-2xl p-6 shadow-lg mb-8 ${
+            darkMode 
+              ? 'bg-gradient-to-r from-gray-800 to-gray-700' 
+              : 'bg-gradient-to-r from-yellow-50 to-orange-50'
+          }`}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 1.0 }}
+        >
+          <div className="flex items-center mb-4">
+            <div className="w-12 h-12 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center mr-4">
+              <HiCash className="text-white text-xl" />
+            </div>
+            <div>
+              <h4 className={`font-bold text-lg ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+                Instant Loan
+              </h4>
+              <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                Get up to ₹50,000 instantly
+              </p>
+            </div>
+          </div>
+          
+          <div className="flex items-center space-x-3">
+            <input
+              type="number"
+              value={loanAmount}
+              onChange={(e) => setLoanAmount(e.target.value)}
+              placeholder="Enter amount"
+              className="flex-1 p-3 rounded-xl border-2 border-gray-200 focus:border-yellow-400 outline-none transition-all duration-300"
+            />
+            <motion.button
+              onClick={() => {
+                handleLoanApplication();
+                navigate("/loan-application");
+              }}
+              className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-6 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              Apply
+            </motion.button>
+          </div>
         </motion.div>
       </div>
 
+      {/* Notifications Panel */}
+      <AnimatePresence>
+        {showNotifications && (
+          <motion.div
+            className="fixed top-0 right-0 w-80 h-full bg-white shadow-2xl z-50 overflow-y-auto"
+            initial={{ x: "100%" }}
+            animate={{ x: 0 }}
+            exit={{ x: "100%" }}
+            transition={{ type: "spring", damping: 25, stiffness: 200 }}
+          >
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-xl font-bold text-gray-800">Notifications</h3>
+                <button
+                  onClick={() => setShowNotifications(false)}
+                  className="p-2 hover:bg-gray-100 rounded-full transition-all duration-300"
+                >
+                  <MdClose className="text-gray-600" />
+                </button>
+              </div>
+              
+              <div className="space-y-4">
+                {notifications.map((notification) => (
+                  <motion.div
+                    key={notification.id}
+                    className="p-4 bg-gray-50 rounded-xl border-l-4 border-blue-500"
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.5 }}
+                  >
+                    <p className="text-gray-800 font-medium">{notification.message}</p>
+                    <p className="text-gray-500 text-sm mt-1">{notification.time}</p>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      <ToastContainer />
+      {/* Chat Support */}
+      <motion.div
+        className={`fixed bottom-6 right-6 ${
+          chatOpen ? 'w-80 h-96' : 'w-14 h-14'
+        } bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl shadow-2xl transition-all duration-500 overflow-hidden z-40`}
+        initial={{ scale: 0 }}
+        animate={{ scale: 1 }}
+        transition={{ duration: 0.8, delay: 1.5 }}
+      >
+        {chatOpen ? (
+          <div className="p-4 h-full flex flex-col">
+            <div className="flex justify-between items-center mb-4">
+              <h4 className="text-white font-semibold">Support Chat</h4>
+              <button
+                onClick={toggleChat}
+                className="text-white hover:bg-white/20 p-1 rounded-full transition-all duration-300"
+              >
+                <MdClose />
+              </button>
+            </div>
+            <div className="flex-1 bg-white/10 rounded-xl p-3 mb-3 overflow-y-auto">
+              <div className="text-white/80 text-sm">
+                <p>👋 Hi! How can we help you today?</p>
+              </div>
+            </div>
+            <div className="flex space-x-2">
+              <input
+                type="text"
+                placeholder="Type your message..."
+                className="flex-1 p-2 rounded-xl bg-white/20 text-white placeholder-white/60 outline-none"
+              />
+              <button className="bg-white/20 p-2 rounded-xl hover:bg-white/30 transition-all duration-300">
+                <span className="text-white">→</span>
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button
+            onClick={toggleChat}
+            className="w-full h-full flex items-center justify-center text-white hover:bg-white/20 transition-all duration-300"
+          >
+            <FaHeadset className="text-xl" />
+          </button>
+        )}
+      </motion.div>
+
+      {/* Logout Button */}
+      <motion.button
+        onClick={handleLogout}
+        className="fixed bottom-6 left-6 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-xl shadow-lg transition-all duration-300"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.8, delay: 1.2 }}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+      >
+        Logout
+      </motion.button>
+
+      <ToastContainer 
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme={darkMode ? "dark" : "light"}
+      />
     </div>
   );
 };

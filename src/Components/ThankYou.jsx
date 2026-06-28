@@ -30,7 +30,7 @@ export default function ThankYou() {
 
         <div className="mt-6">
           <button
-            onClick={() => navigate("/")}
+            onClick={() => navigate("/home")}
             className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-6 rounded-full transition-all"
           >
             Go to Home Now

@@ -1,3 +1,4 @@
+import { apiUrl, getAuthHeaders, getUserId } from "../utils/authStorage";
 import React, { useState, useEffect } from "react";
 import { FiEdit, FiLock, FiUserCheck, FiCamera } from "react-icons/fi";
 import { AiOutlineCheckCircle } from "react-icons/ai";
@@ -5,10 +6,13 @@ import { Tab } from "@headlessui/react";
 import { QRCodeCanvas } from "qrcode.react";
 import axios from "axios";
 import { useAuth } from "../context/AuthContext";
+import { useTheme } from "../context/ThemeContext";
 import boy from "../assets/boy.png"
 
 import { useNavigate } from "react-router-dom";
-
+import PageShell from "./layout/PageShell";
+import { formatCurrency } from "../utils/format";
+import { toast } from "react-toastify";
 
 const UserProfile = () => {
   const navigate = useNavigate();
@@ -28,49 +32,65 @@ const UserProfile = () => {
   const [passwordModal, setPasswordModal] = useState(false);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [kycProgress, setKycProgress] = useState(0);
+  const [kycProgress, setKycProgress] = useState(60);
 
   const tabs = ["Dashboard", "UPI QR Code", "Payments", "Orders", "Help & Support"];
   const { user } = useAuth();
+  const { darkMode } = useTheme();
 
-  const userId = user?._id || localStorage.getItem("userId");
-  const authToken = user?.token || localStorage.getItem("paymanni_token");
-  const [kycs, setKycs] = useState([]);
-  useEffect(() => {
-    axios
-      .get(`https://${import.meta.env.VITE_BACKEND}/api/admin/all`, {
-        headers: { Authorization: `Bearer ${authToken}` },
-      })
-      .then((res) => {
-        if (Array.isArray(res.data)) setKycs(res.data);
-        else setKycs([]);
-      })
-      .catch(() => setKycs([]));
-  }, [authToken]);
+  const userId = getUserId();
+
   useEffect(() => {
     const fetchUserData = async () => {
+      if (!userId) return;
       try {
-        const res = await axios.get(`https://${import.meta.env.VITE_BACKEND}/api/myaccount/${userId}`);
+        const res = await axios.get(apiUrl(`/api/myaccount/${userId}`), {
+          headers: getAuthHeaders(),
+        });
 
         const { name, phone, email, profilePicture, upiId, balance, linkedAccounts, transactions } = res.data;
-        setProfile({ name, phone, email, profilePicture, upiId, balance, linkedAccounts, transactions });
+        setProfile({
+          name: name || user?.name || "",
+          phone: phone || user?.phoneNumber || "",
+          email: email || user?.email || "",
+          profilePicture: profilePicture || "",
+          upiId: upiId || user?.upi || "",
+          balance: balance ?? 0,
+          linkedAccounts: linkedAccounts || [],
+          transactions: transactions || [],
+        });
       } catch (err) {
         console.error("Failed to fetch user profile", err);
+        setProfile((p) => ({
+          ...p,
+          name: user?.name || "",
+          email: user?.email || "",
+          upiId: user?.upi || "",
+        }));
       }
     };
 
-    if (userId) fetchUserData();
-  }, [userId]);
+    fetchUserData();
+  }, [userId, user]);
 
   const handleProfileChange = (e) => {
     const { name, value } = e.target;
     setProfile({ ...profile, [name]: value });
   };
 
-  const handleSaveProfile = () => {
-    setEditing(false);
-    alert("Profile updated successfully!");
-    // You may add API call here to update profile
+  const handleSaveProfile = async () => {
+    if (!userId) return;
+    try {
+      await axios.put(apiUrl(`/api/edituser/${userId}`), {
+        name: profile.name,
+        email: profile.email,
+        upiId: profile.upiId,
+      }, { headers: getAuthHeaders() });
+      setEditing(false);
+      toast.success("Profile updated!");
+    } catch {
+      toast.error("Could not update profile");
+    }
   };
 
   const handleProfilePictureUpload = (e) => {
@@ -112,26 +132,13 @@ const UserProfile = () => {
           <p className="text-lg font-medium">Pending Payments</p>
           <p className="text-xl font-bold">$50</p>
         </div>
-        <div>
-      {kycs.map((kyc) => (
         <div
-          key={kyc._id}
-          className={`p-4 rounded-lg shadow text-center cursor-pointer transition duration-300 ${
-            kyc.status === "Verified"
-              ? "bg-green-100 text-green-800 hover:bg-green-200"
-              : kyc.status === "Rejected"
-              ? "bg-red-100 text-red-800 hover:bg-red-200"
-              : "bg-yellow-100 text-yellow-800 hover:bg-yellow-200"
-          }`}
-          onClick={() => navigate(`/kyc-form/${kyc._id}`)} // Navigate to individual KYC form
+          className="bg-purple-100 p-4 rounded-lg shadow text-center text-black cursor-pointer hover:bg-purple-200 transition"
+          onClick={() => navigate("/kyc-form/new")}
         >
           <p className="text-lg font-medium">KYC Status</p>
-          <p className="text-xl font-bold">{kyc.status}</p>
-          {/* Here you can use `kyc.status` to show the dynamic KYC status */}
+          <p className="text-xl font-bold">{kycProgress >= 100 ? "Verified" : "Pending"}</p>
         </div>
-      ))}
-    </div>
-
       </div>
     </div>
   );
@@ -212,8 +219,14 @@ const UserProfile = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-4xl mx-auto bg-gray-800 rounded-lg shadow-md p-6">
+    <div className={`min-h-screen py-8 px-4 sm:px-6 lg:px-8 transition-colors duration-300 ${
+      darkMode
+        ? "bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white"
+        : "bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 text-gray-900"
+    }`}>
+      <div className={`max-w-4xl mx-auto rounded-lg shadow-md p-6 ${
+        darkMode ? "bg-gray-800" : "bg-white"
+      }`}>
         <h2 className="text-2xl font-semibold text-center mb-6">User Profile & Settings</h2>
 
         <Tab.Group>

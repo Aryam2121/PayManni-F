@@ -1,9 +1,14 @@
+import { apiUrl, getAuthHeaders, getUserId } from "../utils/authStorage";
 import React, { useState,useEffect } from "react";
 import { motion } from "framer-motion";
 import { FaCheckCircle, FaTimesCircle, FaSpinner } from "react-icons/fa"; // Icons for success, failure, and loading
 import { useLocalStorage } from "react-use"; // Custom hook for persistent storage (local storage)
 import axios from "axios"; // Axios for making API requests
+import { useTheme } from "../context/ThemeContext";
+import PageShell from "./layout/PageShell";
+
 const BillPaymentPage = () => {
+  const { darkMode } = useTheme();
   const [selectedBill, setSelectedBill] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState(null);
@@ -21,7 +26,7 @@ const BillPaymentPage = () => {
     subscription: 499,
   }); // Dynamic amounts for each bill
 
-  const billTypes = [
+  const [billTypesList, setBillTypesList] = useState([
     { id: 1, name: "Electricity", icon: "⚡" },
     { id: 2, name: "Water", icon: "💧" },
     { id: 3, name: "Internet", icon: "🌐" },
@@ -31,23 +36,29 @@ const BillPaymentPage = () => {
     { id: 7, name: "Insurance", icon: "🛡️" },
     { id: 8, name: "Rent", icon: "🏠" },
     { id: 9, name: "Subscription", icon: "🎧" },
-  ];
+  ]);
   useEffect(() => {
-    axios.get(`https://${import.meta.env.VITE_BACKEND}/api/bills`)
+    axios.get(apiUrl(`/api/bills`))
       .then((response) => {
-        setBillTypes(response.data.bills);
+        setBillTypesList(response.data.bills);
         setBillAmounts(response.data.billAmounts);
       })
       .catch((error) => console.error("Error fetching bills:", error));
   }, []);
 
+  const handleAmountChange = (billKey, value) => {
+    const amount = parseFloat(value) || 0;
+    setBillAmounts((prev) => ({ ...prev, [billKey]: amount }));
+  };
+
   const handlePayment = async () => {
     setIsLoading(true);
     try {
-      const response = await axios.post(`https://${import.meta.env.VITE_BACKEND}/api/payments`, {
+      const response = await axios.post(apiUrl(`/api/payments`), {
         bill: selectedBill.name,
         amount: billAmounts[selectedBill.name.toLowerCase()],
         method: paymentMethod,
+        userId: localStorage.getItem("userId"),
       });
       setPaymentStatus(response.data.success ? "success" : "failure");
       if (response.data.success) {
@@ -139,14 +150,12 @@ const BillPaymentPage = () => {
   );
 
   return (
-    <div className="p-6 w-full bg-gray-50 dark:bg-gray-900 min-h-screen">
-      <h2 className="text-4xl font-semibold text-gray-800 dark:text-white mb-8">Select Bill to Pay</h2>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-        {billTypes.map((bill) => (
+    <PageShell title="Pay Bills" subtitle="Electricity, water, gas, internet & more">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
+        {billTypesList.map((bill) => (
           <motion.div
             key={bill.id}
-            className="bg-white p-6 rounded-lg shadow-lg border border-gray-200 cursor-pointer hover:shadow-xl transform transition-all hover:scale-105 dark:bg-gray-800 dark:border-gray-700"
+            className="page-card cursor-pointer hover:shadow-xl transition-all"
             onClick={() => setSelectedBill(bill)}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
@@ -185,7 +194,7 @@ const BillPaymentPage = () => {
           ))}
         </ul>
       </div>
-    </div>
+    </PageShell>
   );
 };
 
